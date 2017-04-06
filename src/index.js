@@ -3,7 +3,7 @@
 (function () {
     document.addEventListener("DOMContentLoaded", start, false);
 
-    var snippetUrl = "http://babylonjs-api.azurewebsites.net/api/snippet";
+    var snippetUrl = "https://babylonjs-api2.azurewebsites.net/snippets";
     var engine;
     var meshes = [];
     var scene;
@@ -130,7 +130,7 @@
                             if (xmlHttp.status == 200) {
                                 document.getElementById("templates").value = "";
 
-                                var snippet = JSON.parse(xmlHttp.responseText);
+                                var snippet = JSON.parse(JSON.parse(xmlHttp.responseText)[0].jsonPayload);
 
                                 vertexEditor.setValue(snippet.vertexShader);
                                 vertexEditor.gotoLine(0);
@@ -196,29 +196,39 @@
         var saveFunction = function () {
             var xmlHttp = new XMLHttpRequest();
             xmlHttp.onreadystatechange = function () {
-                if (xmlHttp.readyState == 4 && xmlHttp.status == 201) {
-                    var baseUrl = location.href.replace(location.hash, "").replace(location.search, "");
-                    var snippet = JSON.parse(xmlHttp.responseText);
-                    var newUrl = baseUrl + "#" + snippet.id;
-                    currentSnippetToken = snippet.id;
-                    if (snippet.version != "0") {
-                        newUrl += "#" + snippet.version;
+                if (xmlHttp.readyState == 4) {
+                    if (xmlHttp.status == 201) {
+                        var baseUrl = location.href.replace(location.hash, "").replace(location.search, "");
+                        var snippet = JSON.parse(xmlHttp.responseText);
+                        var newUrl = baseUrl + "#" + snippet.id;
+                        currentSnippetToken = snippet.id;
+                        if (snippet.version && snippet.version != "0") {
+                            newUrl += "#" + snippet.version;
+                        }
+                        location.href = newUrl;
+                        compile();
                     }
-                    location.href = newUrl;
-                    compile();
+                    else {
+                        console.log("Unable to save your code. Please retry.", null);
+                    }
                 }
             }
 
             xmlHttp.open("POST", snippetUrl + (currentSnippetToken ? "/" + currentSnippetToken : ""), true);
             xmlHttp.setRequestHeader("Content-Type", "application/json");
 
-            var payload = {
-                vertexShader: vertexEditor.getValue(),
-                pixelShader: pixelEditor.getValue(),
-                meshId: document.getElementById("meshes").selectedIndex
+            var dataToSend = {
+                payload : {
+                    vertexShader: vertexEditor.getValue(),
+                    pixelShader: pixelEditor.getValue(),
+                    meshId: document.getElementById("meshes").selectedIndex
+                },
+                name: "",
+                description: "",
+                tags: ""
             };
 
-            xmlHttp.send(JSON.stringify(payload));
+            xmlHttp.send(JSON.stringify(dataToSend));
         }
 
         // Save button
