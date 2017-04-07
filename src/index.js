@@ -94,7 +94,7 @@
                 break;
             case 5:
                 document.getElementById("loading").className = "";
-                BABYLON.SceneLoader.ImportMesh("", "", "schooner.babylon", scene, function (newMeshes) {
+                BABYLON.SceneLoader.ImportMesh("", "", "https://cdn.rawgit.com/tolkanabroski/babylonjs-tutorials/master/models/WingedVictory.babylon", scene, function (newMeshes) {
                     for (index = 0; index < newMeshes.length; index++) {
                         mesh = newMeshes[index];
                         mesh.material = shaderMaterial;
