@@ -373,6 +373,8 @@
         document.getElementById("fragmentShaderCode").innerHTML = pixelEditor.getValue();
 
         // Compile
+        scene.getEngine().releaseEffects();
+        
         shaderMaterial = new BABYLON.ShaderMaterial("shader", scene, {
             vertexElement: "vertexShaderCode",
             fragmentElement: "fragmentShaderCode",
