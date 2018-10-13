@@ -3,7 +3,7 @@
 (function () {
     document.addEventListener("DOMContentLoaded", start, false);
 
-    var snippetUrl = "https://babylonjs-api2.azurewebsites.net/snippets";
+    var snippetUrl = "https://babylonsnippetsv3.azurewebsites.net/api/snippets";
     var engine;
     var meshes = [];
     var scene;
@@ -130,7 +130,7 @@
                             if (xmlHttp.status == 200) {
                                 document.getElementById("templates").value = "";
 
-                                var snippet = JSON.parse(JSON.parse(xmlHttp.responseText)[0].jsonPayload);
+                                var snippet = JSON.parse(JSON.parse(xmlHttp.responseText).jsonPayload);
 
                                 vertexEditor.setValue(snippet.vertexShader);
                                 vertexEditor.gotoLine(0);
@@ -218,11 +218,11 @@
             xmlHttp.setRequestHeader("Content-Type", "application/json");
 
             var dataToSend = {
-                payload : {
+                payload : JSON.stringify({
                     vertexShader: vertexEditor.getValue(),
                     pixelShader: pixelEditor.getValue(),
                     meshId: document.getElementById("meshes").selectedIndex
-                },
+                }),
                 name: "",
                 description: "",
                 tags: ""
