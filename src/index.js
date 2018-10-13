@@ -3,7 +3,7 @@
 (function () {
     document.addEventListener("DOMContentLoaded", start, false);
 
-    var snippetUrl = "https://babylonsnippetsv3.azurewebsites.net/snippets";
+    var snippetUrl = "https://snippet.babylonjs.com";
     var engine;
     var meshes = [];
     var scene;
