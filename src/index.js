@@ -379,7 +379,7 @@
             {
                 attributes: ["position", "normal", "uv"],
                 uniforms: ["world", "worldView", "worldViewProjection", "view", "projection"]
-            });
+            }, false);
 
         var refTexture = new BABYLON.Texture("ref.jpg", scene);
         refTexture.wrapU = BABYLON.Texture.CLAMP_ADDRESSMODE;
