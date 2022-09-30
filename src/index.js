@@ -10,6 +10,7 @@
     var shaderMaterial;
     var vertexEditor;
     var pixelEditor;
+    var renderingId = "WebGL1";
 
     function selectTemplate() {
         var select = document.getElementById("templates");
@@ -55,9 +56,9 @@
 
         //location.hash = undefined;
 
-        vertexEditor.setValue(BABYLON.Tools.GetDOMTextContent(document.getElementById(vertexId)));
+        vertexEditor.setValue(BABYLON.Tools.GetDOMTextContent(document.getElementById(vertexId + renderingId)));
         vertexEditor.gotoLine(0);
-        pixelEditor.setValue(BABYLON.Tools.GetDOMTextContent(document.getElementById(pixelId)));
+        pixelEditor.setValue(BABYLON.Tools.GetDOMTextContent(document.getElementById(pixelId + renderingId)));
         pixelEditor.gotoLine(0);
 
         compile();
@@ -111,6 +112,27 @@
             mesh = meshes[index];
             mesh.material = shaderMaterial;
         }
+    };
+    
+    function selectRenderAPI () {
+        var select = document.getElementById("renderAPI");
+        
+        switch (select.selectedIndex) {
+            case 0:
+                renderingId = "WebGL1";
+                break;
+            case 1:
+                renderingId = "WebGL2";
+                break;
+            case 2:
+                renderingId = "WebGPU";
+                break;
+            default:
+                return;
+        }        
+        
+        // re-trigger template selection for the new API
+        selectTemplate()
     };
 
     var currentSnippetToken;
@@ -175,6 +197,10 @@
         effectiveStart();
         checkHash();
     }
+    
+    function initializeRenderingOptions () {
+        var options = document.getElementById("renderAPI");
+    }
 
     function effectiveStart() {
         // Editors
@@ -191,7 +217,9 @@
         // UI
         document.getElementById("templates").addEventListener("change", selectTemplate, false);
         document.getElementById("meshes").addEventListener("change", selectMesh, false);
+        document.getElementById("renderAPI").addEventListener("change", selectRenderAPI, false);
         document.getElementById("compileButton").addEventListener("click", compile, false);
+        initializeRenderingOptions();
 
         var saveFunction = function () {
             var xmlHttp = new XMLHttpRequest();
