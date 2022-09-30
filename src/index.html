@@ -13,369 +13,783 @@
 <body>
     <div id="vertexShaderCode" class="hidden"></div>
     <div id="fragmentShaderCode" class="hidden"></div>
-    
+
     <script type="application/shader" id="fresnelVertexWebGL1">precision highp float;
 
-// Attributes
-attribute vec3 position;
-attribute vec3 normal;
+        // Attributes
+        attribute vec3 position;
+        attribute vec3 normal;
 
-// Uniforms
-uniform mat4 world;
-uniform mat4 worldViewProjection;
+        // Uniforms
+        uniform mat4 world;
+        uniform mat4 worldViewProjection;
 
-// Varying
-varying vec3 vPositionW;
-varying vec3 vNormalW;
+        // Varying
+        varying vec3 vPositionW;
+        varying vec3 vNormalW;
 
-void main(void) {
-    vec4 outPosition = worldViewProjection * vec4(position, 1.0);
-    gl_Position = outPosition;
-    
-    vPositionW = vec3(world * vec4(position, 1.0));
-    vNormalW = normalize(vec3(world * vec4(normal, 0.0)));
-}
+        void main(void) {
+            vec4 outPosition = worldViewProjection * vec4(position, 1.0);
+            gl_Position = outPosition;
+
+            vPositionW = vec3(world * vec4(position, 1.0));
+            vNormalW = normalize(vec3(world * vec4(normal, 0.0)));
+        }
     </script>
 
     <script type="application/shader" id="fresnelPixelWebGL1">precision highp float;
 
-// Lights
-varying vec3 vPositionW;
-varying vec3 vNormalW;
+        // Lights
+        varying vec3 vPositionW;
+        varying vec3 vNormalW;
 
-// Refs
-uniform vec3 cameraPosition;
-uniform sampler2D textureSampler;
+        // Refs
+        uniform vec3 cameraPosition;
+        uniform sampler2D textureSampler;
 
-void main(void) {
-    vec3 color = vec3(1., 1., 1.);
-    vec3 viewDirectionW = normalize(cameraPosition - vPositionW);
+        void main(void) {
+            vec3 color = vec3(1., 1., 1.);
+            vec3 viewDirectionW = normalize(cameraPosition - vPositionW);
 
-    // Fresnel
-	float fresnelTerm = dot(viewDirectionW, vNormalW);
-	fresnelTerm = clamp(1.0 - fresnelTerm, 0., 1.);
+            // Fresnel
+            float fresnelTerm = dot(viewDirectionW, vNormalW);
+            fresnelTerm = clamp(1.0 - fresnelTerm, 0., 1.);
 
-    gl_FragColor = vec4(color * fresnelTerm, 1.);
-}</script>
+            gl_FragColor = vec4(color * fresnelTerm, 1.);
+        }</script>
 
-    <script type="application/shader" id="semVertexWebGL1">precision highp float;
+    <script type="application/shader" id="fresnelVertexWebGL2">
+        #version 300 es
+        precision highp float;
 
-// Attributes
-attribute vec3 position;
-attribute vec3 normal;
-attribute vec2 uv;
+        // Attributes
+        in vec3 position;
+        in vec3 normal;
 
-// Uniforms
-uniform mat4 worldViewProjection;
+        // Uniforms
+        uniform mat4 world;
+        uniform mat4 worldViewProjection;
 
-// Varying
-varying vec4 vPosition;
-varying vec3 vNormal;
+        // Varying
+        out vec3 vPositionW;
+        out vec3 vNormalW;
 
-void main() {
+        void main(void) {
+            vec4 outPosition = worldViewProjection * vec4(position, 1.0);
+            gl_Position = outPosition;
 
-    vec4 p = vec4( position, 1. );
+            vPositionW = vec3(world * vec4(position, 1.0));
+            vNormalW = normalize(vec3(world * vec4(normal, 0.0)));
+        }
+    </script>
 
-    vPosition = p;
-    vNormal = normal;
+    <script type="application/shader" id="fresnelPixelWebGL2">
+        #version 300 es
+        precision highp float;
 
-    gl_Position = worldViewProjection * p;
+        // Lights
+        in vec3 vPositionW;
+        in vec3 vNormalW;
 
-}</script>
+        // Refs
+        uniform vec3 cameraPosition;
+        uniform sampler2D textureSampler;
+
+        out vec4 fragColor;
+
+        void main(void) {
+            vec3 color = vec3(1., 1., 1.);
+            vec3 viewDirectionW = normalize(cameraPosition - vPositionW);
+
+            // Fresnel
+            float fresnelTerm = dot(viewDirectionW, vNormalW);
+            fresnelTerm = clamp(1.0 - fresnelTerm, 0., 1.);
+
+            fragColor = vec4(color * fresnelTerm, 1.);
+        }</script>
+
+    <script type="application/shader" id="semVertexWebGL1">
+        precision highp float;
+
+        // Attributes
+        attribute vec3 position;
+        attribute vec3 normal;
+        attribute vec2 uv;
+
+        // Uniforms
+        uniform mat4 worldViewProjection;
+
+        // Varying
+        varying vec4 vPosition;
+        varying vec3 vNormal;
+
+        void main() {
+
+            vec4 p = vec4( position, 1. );
+
+            vPosition = p;
+            vNormal = normal;
+
+            gl_Position = worldViewProjection * p;
+
+        }</script>
 
     <script type="application/shader" id="semPixelWebGL1">precision highp float;
 
-uniform mat4 worldView;
+        uniform mat4 worldView;
 
-varying vec4 vPosition;
-varying vec3 vNormal;
+        varying vec4 vPosition;
+        varying vec3 vNormal;
 
-uniform sampler2D textureSampler;
-uniform sampler2D refSampler;
+        uniform sampler2D textureSampler;
+        uniform sampler2D refSampler;
 
-void main(void) {
+        void main(void) {
 
-    vec3 e = normalize( vec3( worldView * vPosition ) );
-    vec3 n = normalize( worldView * vec4(vNormal, 0.0) ).xyz;
+            vec3 e = normalize( vec3( worldView * vPosition ) );
+            vec3 n = normalize( worldView * vec4(vNormal, 0.0) ).xyz;
 
-    vec3 r = reflect( e, n );
-    float m = 2. * sqrt(
-        pow( r.x, 2. ) +
-        pow( r.y, 2. ) +
-        pow( r.z + 1., 2. )
-    );
-    vec2 vN = r.xy / m + .5;
+            vec3 r = reflect( e, n );
+            float m = 2. * sqrt(
+                pow( r.x, 2. ) +
+                pow( r.y, 2. ) +
+                pow( r.z + 1., 2. )
+            );
+            vec2 vN = r.xy / m + .5;
 
-    vec3 base = texture2D( refSampler, vN).rgb;
+            vec3 base = texture2D( refSampler, vN).rgb;
 
-    gl_FragColor = vec4( base, 1. );
-}</script>
+            gl_FragColor = vec4( base, 1. );
+        }</script>
 
-        <script type="application/shader" id="waveVertexWebGL1">precision highp float;
+    <script type="application/shader" id="semVertexWebGL2">
+        #version 300 es
+        precision highp float;
 
-// Attributes
-attribute vec3 position;
-attribute vec3 normal;
-attribute vec2 uv;
+        // Attributes
+        in vec3 position;
+        in vec3 normal;
+        in vec2 uv;
 
-// Uniforms
-uniform mat4 worldViewProjection;
-uniform float time;
+        // Uniforms
+        uniform mat4 worldViewProjection;
 
-// Varying
-varying vec3 vPosition;
-varying vec3 vNormal;
-varying vec2 vUV;
+        // Varying
+        out vec4 vPosition;
+        out vec3 vNormal;
 
-void main(void) {
-    vec3 v = position;
-    v.x += sin(2.0 * position.y + (time)) * 0.5;
-    
-    gl_Position = worldViewProjection * vec4(v, 1.0);
-    
-    vPosition = position;
-    vNormal = normal;
-    vUV = uv;
-}</script>
+        void main() {
 
-        <script type="application/shader" id="basicVertexWebGL1">precision highp float;
+            vec4 p = vec4( position, 1. );
 
-// Attributes
-attribute vec3 position;
-attribute vec2 uv;
+            vPosition = p;
+            vNormal = normal;
 
-// Uniforms
-uniform mat4 worldViewProjection;
+            gl_Position = worldViewProjection * p;
 
-// Varying
-varying vec2 vUV;
+        }</script>
 
-void main(void) {
-    gl_Position = worldViewProjection * vec4(position, 1.0);
+    <script type="application/shader" id="semPixelWebGL2">
+        #version 300 es
+        precision highp float;
 
-    vUV = uv;
-}</script>
+        uniform mat4 worldView;
 
-        <script type="application/shader" id="basicPixelWebGL1">precision highp float;
+        in vec4 vPosition;
+        in vec3 vNormal;
 
-varying vec2 vUV;
+        uniform sampler2D textureSampler;
+        uniform sampler2D refSampler;
 
-uniform sampler2D textureSampler;
+        out vec4 fragColor;
 
-void main(void) {
-    gl_FragColor = texture2D(textureSampler, vUV);
-}</script>
+        void main(void) {
 
-        <script type="application/shader" id="bwVertexWebGL1">precision highp float;
+            vec3 e = normalize( vec3( worldView * vPosition ) );
+            vec3 n = normalize( worldView * vec4(vNormal, 0.0) ).xyz;
 
-// Attributes
-attribute vec3 position;
-attribute vec2 uv;
+            vec3 r = reflect( e, n );
+            float m = 2. * sqrt(
+                pow( r.x, 2. ) +
+                pow( r.y, 2. ) +
+                pow( r.z + 1., 2. )
+            );
+            vec2 vN = r.xy / m + .5;
 
-// Uniforms
-uniform mat4 worldViewProjection;
+            vec3 base = texture( refSampler, vN).rgb;
 
-// Varying
-varying vec2 vUV;
+            fragColor = vec4( base, 1. );
+        }</script>
 
-void main(void) {
-    gl_Position = worldViewProjection * vec4(position, 1.0);
+    <script type="application/shader" id="waveVertexWebGL1">
+        precision highp float;
 
-    vUV = uv;
-}</script>
+        // Attributes
+        attribute vec3 position;
+        attribute vec3 normal;
+        attribute vec2 uv;
 
-        <script type="application/shader" id="bwPixelWebGL1">precision highp float;
+        // Uniforms
+        uniform mat4 worldViewProjection;
+        uniform float time;
 
-varying vec2 vUV;
+        // Varying
+        varying vec3 vPosition;
+        varying vec3 vNormal;
+        varying vec2 vUV;
 
-uniform sampler2D textureSampler;
+        void main(void) {
+            vec3 v = position;
+            v.x += sin(2.0 * position.y + (time)) * 0.5;
 
-void main(void) {
-    float luminance = dot(texture2D(textureSampler, vUV).rgb, vec3(0.3, 0.59, 0.11));
-    gl_FragColor = vec4(luminance, luminance, luminance, 1.0);
-}</script>
+            gl_Position = worldViewProjection * vec4(v, 1.0);
 
-        <script type="application/shader" id="cellShadingVertexWebGL1">precision highp float;
+            vPosition = position;
+            vNormal = normal;
+            vUV = uv;
+        }</script>
 
-// Attributes
-attribute vec3 position;
-attribute vec3 normal;
-attribute vec2 uv;
+    <script type="application/shader" id="waveVertexWebGL2">
+        #version 300 es
+        precision highp float;
 
-// Uniforms
-uniform mat4 world;
-uniform mat4 worldViewProjection;
+        // Attributes
+        in vec3 position;
+        in vec3 normal;
+        in vec2 uv;
 
-// Varying
-varying vec3 vPositionW;
-varying vec3 vNormalW;
-varying vec2 vUV;
+        // Uniforms
+        uniform mat4 worldViewProjection;
+        uniform float time;
 
-void main(void) {
-    vec4 outPosition = worldViewProjection * vec4(position, 1.0);
-    gl_Position = outPosition;
-    
-    vPositionW = vec3(world * vec4(position, 1.0));
-    vNormalW = normalize(vec3(world * vec4(normal, 0.0)));
-    
-    vUV = uv;
-}</script>
+        // Varying
+        out vec3 vPosition;
+        out vec3 vNormal;
+        out vec2 vUV;
 
-        <script type="application/shader" id="cellShadingPixelWebGL1">precision highp float;
+        void main(void) {
+            vec3 v = position;
+            v.x += sin(2.0 * position.y + (time)) * 0.5;
 
-// Lights
-varying vec3 vPositionW;
-varying vec3 vNormalW;
-varying vec2 vUV;
+            gl_Position = worldViewProjection * vec4(v, 1.0);
 
-// Refs
-uniform sampler2D textureSampler;
+            vPosition = position;
+            vNormal = normal;
+            vUV = uv;
+        }</script>
 
-void main(void) {
-    float ToonThresholds[4];
-    ToonThresholds[0] = 0.95;
-    ToonThresholds[1] = 0.5;
-    ToonThresholds[2] = 0.2;
-    ToonThresholds[3] = 0.03;
-    
-    float ToonBrightnessLevels[5];
-    ToonBrightnessLevels[0] = 1.0;
-    ToonBrightnessLevels[1] = 0.8;
-    ToonBrightnessLevels[2] = 0.6;
-    ToonBrightnessLevels[3] = 0.35;
-    ToonBrightnessLevels[4] = 0.2;
-    
-    vec3 vLightPosition = vec3(0,20,10);
-    
-    // Light
-    vec3 lightVectorW = normalize(vLightPosition - vPositionW);
-    
-    // diffuse
-    float ndl = max(0., dot(vNormalW, lightVectorW));
-    
-    vec3 color = texture2D(textureSampler, vUV).rgb;
-    
-    if (ndl > ToonThresholds[0])
-    {
-        color *= ToonBrightnessLevels[0];
-    }
-    else if (ndl > ToonThresholds[1])
-    {
-        color *= ToonBrightnessLevels[1];
-    }
-    else if (ndl > ToonThresholds[2])
-    {
-        color *= ToonBrightnessLevels[2];
-    }
-    else if (ndl > ToonThresholds[3])
-    {
-        color *= ToonBrightnessLevels[3];
-    }
-    else
-    {
-        color *= ToonBrightnessLevels[4];
-    }
-    
-    gl_FragColor = vec4(color, 1.);
-}</script>
+    <script type="application/shader" id="basicVertexWebGL1">
+        precision highp float;
 
-        <script type="application/shader" id="phongVertexWebGL1">precision highp float;
+        // Attributes
+        attribute vec3 position;
+        attribute vec2 uv;
 
-// Attributes
-attribute vec3 position;
-attribute vec3 normal;
-attribute vec2 uv;
+        // Uniforms
+        uniform mat4 worldViewProjection;
 
-// Uniforms
-uniform mat4 worldViewProjection;
+        // Varying
+        varying vec2 vUV;
 
-// Varying
-varying vec3 vPosition;
-varying vec3 vNormal;
-varying vec2 vUV;
+        void main(void) {
+            gl_Position = worldViewProjection * vec4(position, 1.0);
 
-void main(void) {
-    vec4 outPosition = worldViewProjection * vec4(position, 1.0);
-    gl_Position = outPosition;
-    
-    vUV = uv;
-    vPosition = position;
-    vNormal = normal;
-}</script>
+            vUV = uv;
+        }</script>
 
-        <script type="application/shader" id="phongPixelWebGL1">precision highp float;
+    <script type="application/shader" id="basicPixelWebGL1">precision highp float;
 
-// Varying
-varying vec3 vPosition;
-varying vec3 vNormal;
-varying vec2 vUV;
+        varying vec2 vUV;
 
-// Uniforms
-uniform mat4 world;
+        uniform sampler2D textureSampler;
 
-// Refs
-uniform vec3 cameraPosition;
-uniform sampler2D textureSampler;
+        void main(void) {
+            gl_FragColor = texture2D(textureSampler, vUV);
+        }</script>
 
-void main(void) {
-    vec3 vLightPosition = vec3(0,20,10);
-    
-    // World values
-    vec3 vPositionW = vec3(world * vec4(vPosition, 1.0));
-    vec3 vNormalW = normalize(vec3(world * vec4(vNormal, 0.0)));
-    vec3 viewDirectionW = normalize(cameraPosition - vPositionW);
-    
-    // Light
-    vec3 lightVectorW = normalize(vLightPosition - vPositionW);
-    vec3 color = texture2D(textureSampler, vUV).rgb;
-    
-    // diffuse
-    float ndl = max(0., dot(vNormalW, lightVectorW));
-    
-    // Specular
-    vec3 angleW = normalize(viewDirectionW + lightVectorW);
-    float specComp = max(0., dot(vNormalW, angleW));
-    specComp = pow(specComp, max(1., 64.)) * 2.;
-    
-    gl_FragColor = vec4(color * ndl + vec3(specComp), 1.);
-}</script>
+    <script type="application/shader" id="basicPixelWebGL2">
+        #version 300 es
+        precision highp float;
 
-        <script type="application/shader" id="discardVertexWebGL1">precision highp float;
+        in vec2 vUV;
 
-// Attributes
-attribute vec3 position;
-attribute vec3 normal;
-attribute vec2 uv;
+        uniform sampler2D textureSampler;
 
-// Uniforms
-uniform mat4 worldViewProjection;
+        out vec4 fragColor;
 
-// Varying
-varying vec2 vUV;
+        void main(void) {
+            fragColor = texture(textureSampler, vUV);
+        }</script>
 
-void main(void) {
-    vec4 outPosition = worldViewProjection * vec4(position, 1.0);
-    gl_Position = outPosition;
+    <script type="application/shader" id="basicVertexWebGL2">
+        #version 300 es
+        precision highp float;
 
-    vUV = uv;
-}</script>
+        // Attributes
+        in vec3 position;
+        in vec2 uv;
 
-        <script type="application/shader" id="discardPixelWebGL1">precision highp float;
+        // Uniforms
+        uniform mat4 worldViewProjection;
 
-varying vec2 vUV;
+        // Varying
+        out vec2 vUV;
 
-// Refs
-uniform sampler2D textureSampler;
+        void main(void) {
+            gl_Position = worldViewProjection * vec4(position, 1.0);
 
-void main(void) {
-    vec3 color = texture2D(textureSampler, vUV).rgb;
-    
-    if (color.g > 0.5) {
-        discard;
-    }
-    
-    gl_FragColor = vec4(color, 1.);
-}</script>
+            vUV = uv;
+        }</script>
+
+    <script type="application/shader" id="bwVertexWebGL1">
+        precision highp float;
+
+        // Attributes
+        attribute vec3 position;
+        attribute vec2 uv;
+
+        // Uniforms
+        uniform mat4 worldViewProjection;
+
+        // Varying
+        varying vec2 vUV;
+
+        void main(void) {
+            gl_Position = worldViewProjection * vec4(position, 1.0);
+
+            vUV = uv;
+        }</script>
+
+    <script type="application/shader" id="bwPixelWebGL1">precision highp float;
+
+        varying vec2 vUV;
+
+        uniform sampler2D textureSampler;
+
+        void main(void) {
+            float luminance = dot(texture2D(textureSampler, vUV).rgb, vec3(0.3, 0.59, 0.11));
+            gl_FragColor = vec4(luminance, luminance, luminance, 1.0);
+        }</script>
+
+    <script type="application/shader" id="bwVertexWebGL2">
+        #version 300 es
+        precision highp float;
+
+        // Attributes
+        in vec3 position;
+        in vec2 uv;
+
+        // Uniforms
+        uniform mat4 worldViewProjection;
+
+        // Varying
+        out vec2 vUV;
+
+        void main(void) {
+            gl_Position = worldViewProjection * vec4(position, 1.0);
+
+            vUV = uv;
+        }</script>
+
+    <script type="application/shader" id="bwPixelWebGL2">
+        #version 300 es
+        precision highp float;
+
+        in vec2 vUV;
+
+        uniform sampler2D textureSampler;
+
+        out vec4 fragColor;
+
+        void main(void) {
+            float luminance = dot(texture(textureSampler, vUV).rgb, vec3(0.3, 0.59, 0.11));
+            fragColor = vec4(luminance, luminance, luminance, 1.0);
+        }</script>
+
+    <script type="application/shader" id="cellShadingVertexWebGL1">
+        precision highp float;
+
+        // Attributes
+        attribute vec3 position;
+        attribute vec3 normal;
+        attribute vec2 uv;
+
+        // Uniforms
+        uniform mat4 world;
+        uniform mat4 worldViewProjection;
+
+        // Varying
+        varying vec3 vPositionW;
+        varying vec3 vNormalW;
+        varying vec2 vUV;
+
+        void main(void) {
+            vec4 outPosition = worldViewProjection * vec4(position, 1.0);
+            gl_Position = outPosition;
+
+            vPositionW = vec3(world * vec4(position, 1.0));
+            vNormalW = normalize(vec3(world * vec4(normal, 0.0)));
+
+            vUV = uv;
+        }</script>
+
+    <script type="application/shader" id="cellShadingPixelWebGL1">precision highp float;
+
+        // Lights
+        varying vec3 vPositionW;
+        varying vec3 vNormalW;
+        varying vec2 vUV;
+
+        // Refs
+        uniform sampler2D textureSampler;
+
+        void main(void) {
+            float ToonThresholds[4];
+            ToonThresholds[0] = 0.95;
+            ToonThresholds[1] = 0.5;
+            ToonThresholds[2] = 0.2;
+            ToonThresholds[3] = 0.03;
+
+            float ToonBrightnessLevels[5];
+            ToonBrightnessLevels[0] = 1.0;
+            ToonBrightnessLevels[1] = 0.8;
+            ToonBrightnessLevels[2] = 0.6;
+            ToonBrightnessLevels[3] = 0.35;
+            ToonBrightnessLevels[4] = 0.2;
+
+            vec3 vLightPosition = vec3(0,20,10);
+
+            // Light
+            vec3 lightVectorW = normalize(vLightPosition - vPositionW);
+
+            // diffuse
+            float ndl = max(0., dot(vNormalW, lightVectorW));
+
+            vec3 color = texture2D(textureSampler, vUV).rgb;
+
+            if (ndl > ToonThresholds[0])
+            {
+                color *= ToonBrightnessLevels[0];
+            }
+            else if (ndl > ToonThresholds[1])
+            {
+                color *= ToonBrightnessLevels[1];
+            }
+            else if (ndl > ToonThresholds[2])
+            {
+                color *= ToonBrightnessLevels[2];
+            }
+            else if (ndl > ToonThresholds[3])
+            {
+                color *= ToonBrightnessLevels[3];
+            }
+            else
+            {
+                color *= ToonBrightnessLevels[4];
+            }
+
+            gl_FragColor = vec4(color, 1.);
+        }</script>
+
+    <script type="application/shader" id="cellShadingVertexWebGL2">
+        #version 300 es
+        precision highp float;
+
+        // Attributes
+        in vec3 position;
+        in vec3 normal;
+        in vec2 uv;
+
+        // Uniforms
+        uniform mat4 world;
+        uniform mat4 worldViewProjection;
+
+        // Varying
+        out vec3 vPositionW;
+        out vec3 vNormalW;
+        out vec2 vUV;
+
+        void main(void) {
+            vec4 outPosition = worldViewProjection * vec4(position, 1.0);
+            gl_Position = outPosition;
+
+            vPositionW = vec3(world * vec4(position, 1.0));
+            vNormalW = normalize(vec3(world * vec4(normal, 0.0)));
+
+            vUV = uv;
+        }</script>
+
+    <script type="application/shader" id="cellShadingPixelWebGL2">
+        #version 300 es
+        precision highp float;
+
+        // Lights
+        in vec3 vPositionW;
+        in vec3 vNormalW;
+        in vec2 vUV;
+
+        // Refs
+        uniform sampler2D textureSampler;
+
+        out vec4 fragColor;
+
+        void main(void) {
+            float ToonThresholds[4];
+            ToonThresholds[0] = 0.95;
+            ToonThresholds[1] = 0.5;
+            ToonThresholds[2] = 0.2;
+            ToonThresholds[3] = 0.03;
+
+            float ToonBrightnessLevels[5];
+            ToonBrightnessLevels[0] = 1.0;
+            ToonBrightnessLevels[1] = 0.8;
+            ToonBrightnessLevels[2] = 0.6;
+            ToonBrightnessLevels[3] = 0.35;
+            ToonBrightnessLevels[4] = 0.2;
+
+            vec3 vLightPosition = vec3(0,20,10);
+
+            // Light
+            vec3 lightVectorW = normalize(vLightPosition - vPositionW);
+
+            // diffuse
+            float ndl = max(0., dot(vNormalW, lightVectorW));
+
+            vec3 color = texture(textureSampler, vUV).rgb;
+
+            if (ndl > ToonThresholds[0])
+            {
+                color *= ToonBrightnessLevels[0];
+            }
+            else if (ndl > ToonThresholds[1])
+            {
+                color *= ToonBrightnessLevels[1];
+            }
+            else if (ndl > ToonThresholds[2])
+            {
+                color *= ToonBrightnessLevels[2];
+            }
+            else if (ndl > ToonThresholds[3])
+            {
+                color *= ToonBrightnessLevels[3];
+            }
+            else
+            {
+                color *= ToonBrightnessLevels[4];
+            }
+
+            fragColor = vec4(color, 1.);
+        }</script>
+
+    <script type="application/shader" id="phongVertexWebGL1">
+        precision highp float;
+
+        // Attributes
+        attribute vec3 position;
+        attribute vec3 normal;
+        attribute vec2 uv;
+
+        // Uniforms
+        uniform mat4 worldViewProjection;
+
+        // Varying
+        varying vec3 vPosition;
+        varying vec3 vNormal;
+        varying vec2 vUV;
+
+        void main(void) {
+            vec4 outPosition = worldViewProjection * vec4(position, 1.0);
+            gl_Position = outPosition;
+
+            vUV = uv;
+            vPosition = position;
+            vNormal = normal;
+        }</script>
+
+    <script type="application/shader" id="phongPixelWebGL1">precision highp float;
+
+        // Varying
+        varying vec3 vPosition;
+        varying vec3 vNormal;
+        varying vec2 vUV;
+
+        // Uniforms
+        uniform mat4 world;
+
+        // Refs
+        uniform vec3 cameraPosition;
+        uniform sampler2D textureSampler;
+
+        void main(void) {
+            vec3 vLightPosition = vec3(0,20,10);
+
+            // World values
+            vec3 vPositionW = vec3(world * vec4(vPosition, 1.0));
+            vec3 vNormalW = normalize(vec3(world * vec4(vNormal, 0.0)));
+            vec3 viewDirectionW = normalize(cameraPosition - vPositionW);
+
+            // Light
+            vec3 lightVectorW = normalize(vLightPosition - vPositionW);
+            vec3 color = texture2D(textureSampler, vUV).rgb;
+
+            // diffuse
+            float ndl = max(0., dot(vNormalW, lightVectorW));
+
+            // Specular
+            vec3 angleW = normalize(viewDirectionW + lightVectorW);
+            float specComp = max(0., dot(vNormalW, angleW));
+            specComp = pow(specComp, max(1., 64.)) * 2.;
+
+            gl_FragColor = vec4(color * ndl + vec3(specComp), 1.);
+        }</script>
+
+    <script type="application/shader" id="phongVertexWebGL2">
+        #version 300 es
+        precision highp float;
+
+        // Attributes
+        in vec3 position;
+        in vec3 normal;
+        in vec2 uv;
+
+        // Uniforms
+        uniform mat4 worldViewProjection;
+
+        // Varying
+        out vec3 vPosition;
+        out vec3 vNormal;
+        out vec2 vUV;
+
+        void main(void) {
+            vec4 outPosition = worldViewProjection * vec4(position, 1.0);
+            gl_Position = outPosition;
+
+            vUV = uv;
+            vPosition = position;
+            vNormal = normal;
+        }</script>
+
+    <script type="application/shader" id="phongPixelWebGL2">
+        #version 300 es
+        precision highp float;
+
+        // Varying
+        in vec3 vPosition;
+        in vec3 vNormal;
+        in vec2 vUV;
+
+        // Uniforms
+        uniform mat4 world;
+
+        // Refs
+        uniform vec3 cameraPosition;
+        uniform sampler2D textureSampler;
+
+        out vec4 fragColor;
+
+        void main(void) {
+            vec3 vLightPosition = vec3(0,20,10);
+
+            // World values
+            vec3 vPositionW = vec3(world * vec4(vPosition, 1.0));
+            vec3 vNormalW = normalize(vec3(world * vec4(vNormal, 0.0)));
+            vec3 viewDirectionW = normalize(cameraPosition - vPositionW);
+
+            // Light
+            vec3 lightVectorW = normalize(vLightPosition - vPositionW);
+            vec3 color = texture(textureSampler, vUV).rgb;
+
+            // diffuse
+            float ndl = max(0., dot(vNormalW, lightVectorW));
+
+            // Specular
+            vec3 angleW = normalize(viewDirectionW + lightVectorW);
+            float specComp = max(0., dot(vNormalW, angleW));
+            specComp = pow(specComp, max(1., 64.)) * 2.;
+
+            fragColor = vec4(color * ndl + vec3(specComp), 1.);
+        }</script>
+
+    <script type="application/shader" id="discardVertexWebGL1">
+        precision highp float;
+
+        // Attributes
+        attribute vec3 position;
+        attribute vec3 normal;
+        attribute vec2 uv;
+
+        // Uniforms
+        uniform mat4 worldViewProjection;
+
+        // Varying
+        varying vec2 vUV;
+
+        void main(void) {
+            vec4 outPosition = worldViewProjection * vec4(position, 1.0);
+            gl_Position = outPosition;
+
+            vUV = uv;
+        }</script>
+
+    <script type="application/shader" id="discardPixelWebGL1">precision highp float;
+
+        varying vec2 vUV;
+
+        // Refs
+        uniform sampler2D textureSampler;
+
+        void main(void) {
+            vec3 color = texture2D(textureSampler, vUV).rgb;
+
+            if (color.g > 0.5) {
+                discard;
+            }
+
+            gl_FragColor = vec4(color, 1.);
+        }</script>
+
+    <script type="application/shader" id="discardVertexWebGL2">
+        #version 300 es
+        precision highp float;
+
+        // Attributes
+        in vec3 position;
+        in vec3 normal;
+        in vec2 uv;
+
+        // Uniforms
+        uniform mat4 worldViewProjection;
+
+        // Varying
+        out vec2 vUV;
+
+        void main(void) {
+            vec4 outPosition = worldViewProjection * vec4(position, 1.0);
+            gl_Position = outPosition;
+
+            vUV = uv;
+        }</script>
+
+    <script type="application/shader" id="discardPixelWebGL2">
+        #version 300 es
+        precision highp float;
+
+        in vec2 vUV;
+
+        // Refs
+        uniform sampler2D textureSampler;
+
+        out vec4 fragColor;
+
+        void main(void) {
+            vec3 color = texture(textureSampler, vUV).rgb;
+
+            if (color.g > 0.5) {
+                discard;
+            }
+
+            fragColor = vec4(color, 1.);
+        }</script>
 
     <div id="outerContainer">
         <div id="subHeaderBackground">
@@ -405,18 +819,15 @@ void main(void) {
                         <option>Ground</option>
                     </select>
                 </div>
-            </div>    
+            </div>
             <div id="rederingDropdown" class="dropdownContainer">
                 <div class="dropdownLabel">3D API:</div>
                 <div class="dropdownSelectContainer">
                     <select id="renderAPI">
-                        <option selected>WebGL 1.0</option>
-                        <option>WebGL 2.0</option>
-                        <option>WebGPU</option>
                     </select>
                 </div>
-            </div>    
-            
+            </div>
+
             <div id="buttons">
                 <div id="compileButton" class="circleButton" title="Compile"></div>
                 <div id="saveButton" class="circleButton" title="Save"></div>
