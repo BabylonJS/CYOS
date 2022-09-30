@@ -199,7 +199,12 @@
     }
     
     function initializeRenderingOptions () {
-        var options = document.getElementById("renderAPI");
+        var renderAPI = document.getElementById("renderAPI");
+
+        //TODO: This should be dynamically built based on browser capabilities
+        renderAPI.options.add(new Option("WebGL 1.0"));
+        renderAPI.options.add(new Option("WebGL 2.0"));
+        renderAPI.options.add(new Option("WebGPU"));
     }
 
     function effectiveStart() {
