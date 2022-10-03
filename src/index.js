@@ -11,6 +11,8 @@
     var vertexEditor;
     var pixelEditor;
     var renderingId = "WebGL1";
+    var shaderLanguage;
+    var webGPUSupported = false;
 
     function selectTemplate() {
         var select = document.getElementById("templates");
@@ -120,12 +122,15 @@
         switch (select.selectedIndex) {
             case 0:
                 renderingId = "WebGL1";
+                shaderLanguage = BABYLON.ShaderLanguage.GLSL;
                 break;
             case 1:
                 renderingId = "WebGL2";
+                shaderLanguage = BABYLON.ShaderLanguage.GLSL;
                 break;
             case 2:
                 renderingId = "WebGPU";
+                shaderLanguage = BABYLON.ShaderLanguage.WGSL;
                 break;
             default:
                 return;
@@ -204,7 +209,10 @@
         //TODO: This should be dynamically built based on browser capabilities
         renderAPI.options.add(new Option("WebGL 1.0"));
         renderAPI.options.add(new Option("WebGL 2.0"));
-        renderAPI.options.add(new Option("WebGPU"));
+        
+        if (webGPUSupported) {
+            renderAPI.options.add(new Option("WebGPU"));
+        }
     }
 
     function effectiveStart() {
@@ -303,7 +311,13 @@
         }
 
         var stringifyShader = function (name, data) {
-            var text = "                BABYLON.Effect.ShadersStore[\"" + name + "\"]=";
+            var text = "";
+            
+            if (webGPUSupported) {
+                var text = "                BABYLON.Effect.ShadersStoreWGSL[\"" + name + "\"]=";
+            } else {
+                var text = "                BABYLON.Effect.ShadersStore[\"" + name + "\"]=";
+            }
 
             var splits = data.split("\n");
             for (var index = 0; index < splits.length; index++) {
@@ -322,6 +336,16 @@
             }
 
             return text;
+        }
+        
+        async function createEngine() {
+            webGPUSupported = await BABYLON.WebGPUEngine.IsSupportedAsync;
+            if (webGPUSupported) {
+                const engine = new BABYLON.WebGPUEngine(document.getElementById("renderCanvas"));
+                await engine.initAsync();
+                return engine;
+            }
+            return new BABYLON.Engine(document.getElementById("renderCanvas"), true);
         }
 
         var getZip = function () {
@@ -411,7 +435,8 @@
         },
             {
                 attributes: ["position", "normal", "uv"],
-                uniforms: ["world", "worldView", "worldViewProjection", "view", "projection"]
+                uniforms: ["world", "worldView", "worldViewProjection", "view", "projection"],
+                shaderLanguage: shaderLanguage
             }, false);
 
         var refTexture = new BABYLON.Texture("ref.jpg", scene);
