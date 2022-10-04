@@ -107,6 +107,11 @@ void main(void) {
     fragColor = vec4(color * fresnelTerm, 1.);
 }</script>
 
+    <script type="application/shader" id="fresnelPixelWebGPU">
+//TODO: To be implemented
+    </script>
+
+
     <script type="application/shader" id="semVertexWebGL1">
 precision highp float;
 
@@ -220,6 +225,15 @@ void main(void) {
     fragColor = vec4( base, 1. );
 }</script>
 
+    <script type="application/shader" id="semVertexWebGPU">
+//TODO: To be implemented
+    </script>
+
+    <script type="application/shader" id="semPixelWebGPU">
+//TODO: To be implemented
+    </script>
+
+
     <script type="application/shader" id="waveVertexWebGL1">
 precision highp float;
 
@@ -276,6 +290,11 @@ void main(void) {
     vNormal = normal;
     vUV = uv;
 }</script>
+
+    <script type="application/shader" id="waveVertexWebGPU">
+//TODO: To be implemented        
+    </script>
+
 
     <script type="application/shader" id="basicVertexWebGL1">
 precision highp float;
@@ -339,6 +358,15 @@ void main(void) {
 
     vUV = uv;
 }</script>
+
+<script type="application/shader" id="basicPixelWebGPU">
+//TODO: To be implemented        
+</script>
+
+    <script type="application/shader" id="basicVertexWebGPU">
+//TODO: To be implemented                
+</script>
+
 
     <script type="application/shader" id="bwVertexWebGL1">
 precision highp float;
@@ -404,6 +432,15 @@ void main(void) {
     float luminance = dot(texture(textureSampler, vUV).rgb, vec3(0.3, 0.59, 0.11));
     fragColor = vec4(luminance, luminance, luminance, 1.0);
 }</script>
+
+    <script type="application/shader" id="bwVertexWebGPU">
+//TODO: To be implemented                        
+    </script>
+
+    <script type="application/shader" id="bwPixelWebGPU">
+//TODO: To be implemented                        
+    </script>
+
 
     <script type="application/shader" id="cellShadingVertexWebGL1">
 precision highp float;
@@ -580,6 +617,14 @@ void main(void) {
     fragColor = vec4(color, 1.);
 }</script>
 
+    <script type="application/shader" id="cellShadingVertexWebGPU">
+//TODO: To be implemented 
+    </script>
+
+    <script type="application/shader" id="cellShadingPixelWebGPU">
+//TODO: To be implemented         
+    </script>
+
     <script type="application/shader" id="phongVertexWebGL1">
 precision highp float;
 
@@ -669,45 +714,13 @@ void main(void) {
 }</script>
 
     <script type="application/shader" id="phongPixelWebGL2">
-#version 300 es
-precision highp float;
+//TODO: To be implemented                 
+    </script>
 
-// Varying
-in vec3 vPosition;
-in vec3 vNormal;
-in vec2 vUV;
+    <script type="application/shader" id="phongPixelWebGPU">
+//TODO: To be implemented                 
+    </script>
 
-// Uniforms
-uniform mat4 world;
-
-// Refs
-uniform vec3 cameraPosition;
-uniform sampler2D textureSampler;
-
-out vec4 fragColor;
-
-void main(void) {
-    vec3 vLightPosition = vec3(0,20,10);
-
-    // World values
-    vec3 vPositionW = vec3(world * vec4(vPosition, 1.0));
-    vec3 vNormalW = normalize(vec3(world * vec4(vNormal, 0.0)));
-    vec3 viewDirectionW = normalize(cameraPosition - vPositionW);
-
-    // Light
-    vec3 lightVectorW = normalize(vLightPosition - vPositionW);
-    vec3 color = texture(textureSampler, vUV).rgb;
-
-    // diffuse
-    float ndl = max(0., dot(vNormalW, lightVectorW));
-
-    // Specular
-    vec3 angleW = normalize(viewDirectionW + lightVectorW);
-    float specComp = max(0., dot(vNormalW, angleW));
-    specComp = pow(specComp, max(1., 64.)) * 2.;
-
-    fragColor = vec4(color * ndl + vec3(specComp), 1.);
-}</script>
 
     <script type="application/shader" id="discardVertexWebGL1">
 precision highp float;
@@ -789,6 +802,15 @@ void main(void) {
 
     fragColor = vec4(color, 1.);
 }</script>
+
+    <script type="application/shader" id="discardVertexWebGPU">
+//TODO: To be implemented                         
+    </script>
+
+    <script type="application/shader" id="discardPixelWebGPU">
+//TODO: To be implemented                         
+    </script>
+
 
     <div id="outerContainer">
         <div id="subHeaderBackground">
