@@ -360,11 +360,41 @@ void main(void) {
 }</script>
 
 <script type="application/shader" id="basicPixelWebGPU">
-//TODO: To be implemented        
+uniform vColor : array<vec4<f32>, 2>;
+
+varying vUV : vec2<f32>;
+
+var textureSampler : sampler;
+
+@fragment
+fn main(input : FragmentInputs) -> FragmentOutputs {
+    gl_FragColor = textureSample(diffuse, textureSampler, vUV) * uniforms.vColor[1];
+}       
 </script>
 
     <script type="application/shader" id="basicVertexWebGPU">
-//TODO: To be implemented                
+#include<sceneUboDeclaration>
+#include<meshUboDeclaration>
+
+// Attributes
+attribute position : vec4<f32>;
+attribute uv: vec2<f32>;
+
+// Varying
+varying vUV : vec2<f32>;
+
+struct MyUBO {
+    scale: f32,
+};
+
+var<uniform> myUBO: MyUBO;
+
+@vertex
+fn main(input : VertexInputs) -> FragmentInputs {
+    gl_Position = scene.viewProjection * mesh.world * vec4<f32>(position * vec3<f32>(myUBO.scale), 1.0);
+
+    vUV = uv;
+} 
 </script>
 
 
