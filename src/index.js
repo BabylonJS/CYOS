@@ -215,7 +215,7 @@
         }
     }
 
-    function effectiveStart() {
+    async function effectiveStart()  {
         // Editors
         vertexEditor = ace.edit("vertexShaderEditor");
         vertexEditor.setTheme("ace/theme/chrome");
@@ -232,7 +232,7 @@
         document.getElementById("meshes").addEventListener("change", selectMesh, false);
         document.getElementById("renderAPI").addEventListener("change", selectRenderAPI, false);
         document.getElementById("compileButton").addEventListener("click", compile, false);
-        initializeRenderingOptions();
+        //initializeRenderingOptions();
 
         var saveFunction = function () {
             var xmlHttp = new XMLHttpRequest();
@@ -338,14 +338,15 @@
             return text;
         }
         
-        async function createEngine() {
+        async function createEngine(canvas) {
             webGPUSupported = await BABYLON.WebGPUEngine.IsSupportedAsync;
             if (webGPUSupported) {
-                const engine = new BABYLON.WebGPUEngine(document.getElementById("renderCanvas"));
+                const engine = new BABYLON.WebGPUEngine(canvas);
                 await engine.initAsync();
+                engine.dbgShowShaderCode = true
                 return engine;
             }
-            return new BABYLON.Engine(document.getElementById("renderCanvas"), true);
+            return new BABYLON.Engine(canvas, true);
         }
 
         var getZip = function () {
@@ -387,13 +388,17 @@
         // Babylon.js
         if (BABYLON.Engine.isSupported()) {
             var canvas = document.getElementById("renderCanvas");
-            engine = new BABYLON.Engine(canvas, true);
+            //engine = new BABYLON.Engine(canvas, true);
+            engine = await createEngine(canvas);
             scene = new BABYLON.Scene(engine);
             var camera = new BABYLON.ArcRotateCamera("Camera", 0, Math.PI / 2, 12, BABYLON.Vector3.Zero(), scene);
 
             camera.attachControl(canvas, false);
             camera.lowerRadiusLimit = 1;
             camera.minZ = 1.0;
+
+            // now with the engine configure add the set of available rendering modes.
+            initializeRenderingOptions();
 
             selectMesh();
 
@@ -436,6 +441,7 @@
             {
                 attributes: ["position", "normal", "uv"],
                 uniforms: ["world", "worldView", "worldViewProjection", "view", "projection"],
+                uniformBuffers: ["Scene", "Mesh"],
                 shaderLanguage: shaderLanguage
             }, false);
 
