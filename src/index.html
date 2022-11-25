@@ -11,8 +11,8 @@
     <link href="index.css" rel="stylesheet" />
 </head>
 <body>
-    <div id="vertexShaderCode" class="hidden"></div>
-    <div id="fragmentShaderCode" class="hidden"></div>
+    <script type="application/shader" id="vertexShaderCode"></script>
+    <script type="application/shader" id="fragmentShaderCode"></script>
 
     <script type="application/shader" id="fresnelVertexWebGL1">precision highp float;
 
@@ -108,8 +108,24 @@ void main(void) {
 }</script>
 
     <script type="application/shader" id="fresnelPixelWebGPU">
-//TODO: To be implemented
-    </script>
+// Varying
+varying vPositionW : vec3<f32>;
+varying vNormalW : vec3<f32>;
+
+uniform cameraPosition : vec3<f32>;
+
+@fragment
+fn main(input : FragmentInputs) -> FragmentOutputs {
+    let color = vec3(1., 1., 1.);
+    let viewDirectionW = normalize(uniforms.cameraPosition - vPositionW);
+
+    // Fresnel
+    var fresnelTerm = dot(viewDirectionW, vNormalW);
+    fresnelTerm = clamp(1.0 - fresnelTerm, 0., 1.);
+
+    //gl_FragColor = vec4 (color * fresnelTerm, 1.);
+    gl_FragColor = vec4 (fresnelTerm, 0., 0., 1.);
+}</script>
 
 
     <script type="application/shader" id="semVertexWebGL1">
@@ -226,12 +242,58 @@ void main(void) {
 }</script>
 
     <script type="application/shader" id="semVertexWebGPU">
-//TODO: To be implemented
-    </script>
+#include<sceneUboDeclaration>
+#include<meshUboDeclaration>
+
+// Attributes
+attribute position : vec3<f32>;
+attribute normal : vec3<f32>;
+attribute uv: vec2<f32>;
+
+// Varying
+varying vPosition : vec4<f32>;
+varying vNormal : vec3<f32>;
+
+@vertex
+fn main(input : VertexInputs) -> FragmentInputs {
+    let p = vec4<f32>(position, 1.0);
+    vPosition = p;
+    vNormal = normal;
+
+    gl_Position = scene.viewProjection * mesh.world * p;
+    
+    vUV = uv;
+} </script>
 
     <script type="application/shader" id="semPixelWebGPU">
-//TODO: To be implemented
-    </script>
+uniform worldView : mat4x4<f32>;
+
+varying vPosition : vec4<f32>;
+varying vNormal : vec3<f32>;
+varying vUV : vec2<f32>;
+
+var diffuse : texture_2d<f32>;
+var mySampler : sampler;
+
+@fragment
+fn main(input : FragmentInputs) -> FragmentOutputs {
+    let e = normalize(uniforms.worldView * vPosition).xyz;
+    let n = normalize(uniforms.worldView * vec4(vNormal, 0.0)).xyz;
+
+    let r = reflect( e, n );
+
+    let m = 2. * sqrt(
+        pow( r.x, 2. ) +
+        pow( r.y, 2. ) +
+        pow( r.z + 1., 2. )
+    );
+
+    let vN = r.xy / m + .5;
+
+    let base = textureSample(diffuse, mySampler, vN).rgb;
+
+    gl_FragColor = vec4( base, 1.0);
+} </script>
 
 
     <script type="application/shader" id="waveVertexWebGL1">
@@ -292,8 +354,32 @@ void main(void) {
 }</script>
 
     <script type="application/shader" id="waveVertexWebGPU">
-//TODO: To be implemented        
-    </script>
+#include<sceneUboDeclaration>
+#include<meshUboDeclaration>
+
+// Attributes
+attribute position : vec3<f32>;
+attribute normal : vec3<f32>;
+attribute uv: vec2<f32>;
+
+// uniforms
+uniform time : f32;
+
+// Varying
+varying vPosition : vec3<f32>;
+varying vNormal : vec3<f32>;
+varying vUV : vec2<f32>;
+
+@vertex
+fn main(input : VertexInputs) -> FragmentInputs {
+    let v = position + sin(2.0 * position.y + (uniforms.time)) * 0.5;
+    let outPosition = scene.viewProjection * mesh.world * vec4<f32>(position, 1.0);
+    gl_Position = scene.viewProjection * mesh.world * vec4(v, 1.0);
+
+    vUV = uv;
+    vPosition = position;
+    vNormal = normal;
+} </script>
 
 
     <script type="application/shader" id="basicVertexWebGL1">
@@ -464,12 +550,34 @@ void main(void) {
 }</script>
 
     <script type="application/shader" id="bwVertexWebGPU">
-//TODO: To be implemented                        
-    </script>
+#include<sceneUboDeclaration>
+#include<meshUboDeclaration>
+
+// Attributes
+attribute position : vec3<f32>;
+attribute uv: vec2<f32>;
+
+// Varying
+varying vUV : vec2<f32>;
+
+@vertex
+fn main(input : VertexInputs) -> FragmentInputs {
+    gl_Position = scene.viewProjection * mesh.world * vec4<f32>(position, 1.0);
+
+    vUV = uv;
+}</script>
 
     <script type="application/shader" id="bwPixelWebGPU">
-//TODO: To be implemented                        
-    </script>
+varying vUV : vec2<f32>;
+
+var diffuse : texture_2d<f32>;
+var mySampler : sampler;
+
+@fragment
+fn main(input : FragmentInputs) -> FragmentOutputs {
+    let luminance  = dot(textureSample(diffuse, mySampler, vUV).rgb, vec3<f32>(0.3, 0.59, 0.11));
+    gl_FragColor = vec4(luminance, luminance, luminance, 1.0);
+}</script>
 
 
     <script type="application/shader" id="cellShadingVertexWebGL1">
@@ -743,13 +851,68 @@ void main(void) {
     vNormal = normal;
 }</script>
 
-    <script type="application/shader" id="phongPixelWebGL2">
-//TODO: To be implemented                 
-    </script>
+    <script type="application/shader" id="phongVertexWebGPU">
+#include<sceneUboDeclaration>
+#include<meshUboDeclaration>
+
+// Attributes
+attribute position : vec3<f32>;
+attribute normal : vec3<f32>;
+attribute uv: vec2<f32>;
+
+// Varying
+varying vPosition : vec3<f32>;
+varying vNormal : vec3<f32>;
+varying vUV : vec2<f32>;
+
+@vertex
+fn main(input : VertexInputs) -> FragmentInputs {
+    let outPosition = scene.viewProjection * mesh.world * vec4<f32>(position, 1.0);
+    gl_Position = outPosition;
+
+    vUV = uv;
+    vPosition = position;
+    vNormal = normal;
+}</script>
 
     <script type="application/shader" id="phongPixelWebGPU">
-//TODO: To be implemented                 
-    </script>
+// Varying
+varying vPosition : vec3<f32>;
+varying vNormal : vec3<f32>;
+varying vUV : vec2<f32>;
+
+// Uniforms
+uniform world: mat4x4<f32>;
+
+// Refs
+uniform cameraPosition: vec3<f32>;
+
+var diffuse : texture_2d<f32>;
+var mySampler : sampler;
+
+@fragment
+fn main(input : FragmentInputs) -> FragmentOutputs {
+    let vLightPosition = vec3(0.0,20.0,10.0);
+
+    // World values
+    let vPositionW = (uniforms.world * vec4(vPosition, 1.0)).xyz;
+    let vNormalW = normalize((uniforms.world * vec4(vNormal, 0.0)).xyz);
+    let viewDirectionW = normalize(uniforms.cameraPosition - vPositionW);
+
+    // Light
+    let lightVectorW = normalize(vLightPosition - vPositionW);
+    let color = textureSample(diffuse, mySampler, vUV).rgb;
+
+    // diffuse
+    let ndl = max(0., dot(vNormalW, lightVectorW));
+
+    // Specular
+    let angleW = normalize(viewDirectionW + lightVectorW);
+    let specComp = max(0., dot(vNormalW, angleW));
+    let specComp2 = pow(specComp, max(1., 64.)) * 2.;
+
+    gl_FragColor = vec4(color * ndl + vec3(specComp), 1.);
+}</script>
 
 
     <script type="application/shader" id="discardVertexWebGL1">
@@ -834,12 +997,40 @@ void main(void) {
 }</script>
 
     <script type="application/shader" id="discardVertexWebGPU">
-//TODO: To be implemented                         
-    </script>
+#include<sceneUboDeclaration>
+#include<meshUboDeclaration>
+
+// Attributes
+attribute position : vec3<f32>;
+attribute normal : vec3<f32>;
+attribute uv: vec2<f32>;
+
+// Varying
+varying vUV : vec2<f32>;
+
+@vertex
+fn main(input : VertexInputs) -> FragmentInputs {
+    let outPosition = scene.viewProjection * mesh.world * vec4<f32>(position, 1.0);
+    gl_Position = outPosition;
+
+    vUV = uv;
+}</script>
 
     <script type="application/shader" id="discardPixelWebGPU">
-//TODO: To be implemented                         
-    </script>
+varying vUV : vec2<f32>;
+
+var diffuse : texture_2d<f32>;
+var mySampler : sampler;
+
+@fragment
+fn main(input : FragmentInputs) -> FragmentOutputs {
+    let color = textureSample(diffuse, mySampler, vUV).rgb;
+    if (color.g > 0.5) {
+        discard;
+    }
+
+    gl_FragColor = vec4(color, 1.);
+}</script>
 
 
     <div id="outerContainer">
