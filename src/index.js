@@ -99,18 +99,23 @@ function compile() {
     let mainTexture = new BABYLON.Texture("amiga.jpg", scene);
 
     shaderMaterial.setTexture("textureSampler", mainTexture);
-    shaderMaterial.setTexture("diffuse", mainTexture);
+    
     shaderMaterial.setTexture("refSampler", refTexture);
     shaderMaterial.setFloat("time", 0);
     shaderMaterial.setVector3("cameraPosition", BABYLON.Vector3.Zero());
     shaderMaterial.backFaceCulling = false;
 
-    const sampler = new BABYLON.TextureSampler();
+    if (webGPUSupported) {
+        // Also needed for WebGPU version
+        shaderMaterial.setTexture("diffuse", mainTexture);
 
-    sampler.setParameters(); // use the default values
-    sampler.samplingMode = BABYLON.Constants.TEXTURE_NEAREST_SAMPLINGMODE;
+        const sampler = new BABYLON.TextureSampler();
 
-    shaderMaterial.setTextureSampler("mySampler", sampler);
+        sampler.setParameters(); // use the default values
+        sampler.samplingMode = BABYLON.Constants.TEXTURE_NEAREST_SAMPLINGMODE;
+
+        shaderMaterial.setTextureSampler("mySampler", sampler);
+    }
 
     for (const mesh of meshes) {
         mesh.material = shaderMaterial
