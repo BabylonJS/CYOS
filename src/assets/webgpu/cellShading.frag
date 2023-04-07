@@ -24,12 +24,12 @@ fn main(input : FragmentInputs) -> FragmentOutputs {
     let vLightPosition = vec3<f32>(0,20,10);
 
     // Light
-    let lightVectorW = normalize(vLightPosition - vPositionW);
+    let lightVectorW = normalize(vLightPosition - fragmentInputs.vPositionW);
 
     // diffuse
-    let ndl = max(0., dot(vNormalW, lightVectorW));
+    let ndl = max(0., dot(fragmentInputs.vNormalW, lightVectorW));
 
-    var color = textureSample(diffuse, mySampler, vUV).rgb;
+    var color = textureSample(diffuse, mySampler, fragmentInputs.vUV).rgb;
 
     if (ndl > ToonThresholds[0])
     {
@@ -52,5 +52,5 @@ fn main(input : FragmentInputs) -> FragmentOutputs {
         color *= ToonBrightnessLevels[4];
     }
 
-    gl_FragColor = vec4(color, 1.);
+    fragmentOutputs.color = vec4(color, 1.);
 }

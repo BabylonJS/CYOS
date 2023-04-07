@@ -17,13 +17,13 @@ fn main(input : FragmentInputs) -> FragmentOutputs {
     let vLightPosition = vec3(0.0,20.0,10.0);
 
     // World values
-    let vPositionW = (uniforms.world * vec4(vPosition, 1.0)).xyz;
-    let vNormalW = normalize((uniforms.world * vec4(vNormal, 0.0)).xyz);
+    let vPositionW = (uniforms.world * vec4(fragmentInputs.vPosition, 1.0)).xyz;
+    let vNormalW = normalize((uniforms.world * vec4(fragmentInputs.vNormal, 0.0)).xyz);
     let viewDirectionW = normalize(uniforms.cameraPosition - vPositionW);
 
     // Light
     let lightVectorW = normalize(vLightPosition - vPositionW);
-    let color = textureSample(textureSampler, mySampler, vUV).rgb;
+    let color = textureSample(textureSampler, mySampler, fragmentInputs.vUV).rgb;
 
     // diffuse
     let ndl = max(0., dot(vNormalW, lightVectorW));
@@ -33,5 +33,5 @@ fn main(input : FragmentInputs) -> FragmentOutputs {
     let specComp = max(0., dot(vNormalW, angleW));
     let specComp2 = pow(specComp, max(1., 64.)) * 2.;
 
-    gl_FragColor = vec4(color * ndl + vec3(specComp), 1.);
+    fragmentOutputs.color = vec4(color * ndl + vec3(specComp), 1.);
 }

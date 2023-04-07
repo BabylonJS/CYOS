@@ -10,8 +10,8 @@ var mySampler : sampler;
 
 @fragment
 fn main(input : FragmentInputs) -> FragmentOutputs {
-    let e = normalize(uniforms.worldView * vPosition).xyz;
-    let n = normalize(uniforms.worldView * vec4(vNormal, 0.0)).xyz;
+    let e = normalize(uniforms.worldView * fragmentInputs.vPosition).xyz;
+    let n = normalize(uniforms.worldView * vec4(fragmentInputs.vNormal, 0.0)).xyz;
 
     let r = reflect( e, n );
 
@@ -25,5 +25,5 @@ fn main(input : FragmentInputs) -> FragmentOutputs {
 
     let base = textureSample(refSampler, mySampler, vN).rgb;
 
-    gl_FragColor = vec4( base, 1.0);
+    fragmentOutputs.color = vec4( base, 1.0);
 }

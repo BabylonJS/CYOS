@@ -7,11 +7,11 @@ uniform cameraPosition : vec3<f32>;
 @fragment
 fn main(input : FragmentInputs) -> FragmentOutputs {
     let color = vec3(1., 1., 1.);
-    let viewDirectionW = normalize(uniforms.cameraPosition - vPositionW);
+    let viewDirectionW = normalize(uniforms.cameraPosition - fragmentInputs.vPositionW);
 
     // Fresnel
-    var fresnelTerm = dot(viewDirectionW, vNormalW);
+    var fresnelTerm = dot(viewDirectionW, fragmentInputs.vNormalW);
     fresnelTerm = clamp(1.0 - fresnelTerm, 0., 1.);
 
-    gl_FragColor = vec4 (color * fresnelTerm, 1.);
+    fragmentOutputs.color = vec4 (color * fresnelTerm, 1.);
 }

@@ -5,5 +5,5 @@ var mySampler : sampler;
 
 @fragment
 fn main(input : FragmentInputs) -> FragmentOutputs {
-    gl_FragColor = textureSample(diffuse, mySampler, vUV);
+    fragmentOutputs.color = textureSample(diffuse, mySampler, fragmentInputs.vUV);
 }

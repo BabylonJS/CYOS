@@ -11,9 +11,9 @@ varying vNormal : vec3<f32>;
 
 @vertex
 fn main(input : VertexInputs) -> FragmentInputs {
-    let p = vec4<f32>(position, 1.0);
-    vPosition = p;
-    vNormal = normal;
+    let p = vec4<f32>(vertexInputs.position, 1.0);
+    vertexOutputs.vPosition = p;
+    vertexOutputs.vNormal = vertexInputs.normal;
 
-    gl_Position = scene.viewProjection * mesh.world * p;
+    vertexOutputs.position = scene.viewProjection * mesh.world * p;
 }

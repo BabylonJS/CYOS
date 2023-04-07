@@ -5,6 +5,6 @@ var mySampler : sampler;
 
 @fragment
 fn main(input : FragmentInputs) -> FragmentOutputs {
-    let luminance  = dot(textureSample(diffuse, mySampler, vUV).rgb, vec3<f32>(0.3, 0.59, 0.11));
-    gl_FragColor = vec4(luminance, luminance, luminance, 1.0);
+    let luminance  = dot(textureSample(diffuse, mySampler, fragmentInputs.vUV).rgb, vec3<f32>(0.3, 0.59, 0.11));
+    fragmentOutputs.color = vec4(luminance, luminance, luminance, 1.0);
 }

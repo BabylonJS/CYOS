@@ -16,11 +16,11 @@ varying vUV : vec2<f32>;
 
 @vertex
 fn main(input : VertexInputs) -> FragmentInputs {
-    let v = position + sin(2.0 * position.y + (uniforms.time)) * 0.5;
-    let outPosition = scene.viewProjection * mesh.world * vec4<f32>(position, 1.0);
-    gl_Position = scene.viewProjection * mesh.world * vec4(v, 1.0);
+    let v = vertexInputs.position + sin(2.0 * vertexInputs.position.y + (uniforms.time)) * 0.5;
+    let outPosition = scene.viewProjection * mesh.world * vec4<f32>(vertexInputs.position, 1.0);
+    vertexOutputs.position = scene.viewProjection * mesh.world * vec4(v, 1.0);
 
-    vUV = uv;
-    vPosition = position;
-    vNormal = normal;
+    vertexOutputs.vUV = vertexInputs.uv;
+    vertexOutputs.vPosition = vertexInputs.position;
+    vertexOutputs.vNormal = vertexInputs.normal;
 }
