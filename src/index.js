@@ -240,7 +240,7 @@ async function createEngine(canvas) {
     }
 
     async function effectiveStart()  {
-        // Editors
+        // Editors. Ideally we should have a WGSL mode as well.
         vertexEditor = ace.edit("vertexShaderEditor");
         vertexEditor.setTheme("ace/theme/chrome");
         vertexEditor.getSession().setMode("ace/mode/glsl");
