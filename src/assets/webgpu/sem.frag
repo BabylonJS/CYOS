@@ -2,7 +2,6 @@
 
 varying vPosition : vec4<f32>;
 varying vNormal : vec3<f32>;
-varying vUV : vec2<f32>;
 
 var diffuse : texture_2d<f32>;
 var refSampler : texture_2d<f32>;
