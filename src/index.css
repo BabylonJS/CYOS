@@ -700,3 +700,6 @@ select:focus::-ms-value {
 .error {
   color: red;
 }
+.disabledButton {
+    pointer-events: none
+}

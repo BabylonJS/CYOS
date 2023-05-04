@@ -1,84 +1,45 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Distributed under the BSD license:
- *
- * Copyright (c) 2010, Ajax.org B.V.
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Ajax.org B.V. nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL AJAX.ORG B.V. BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ***** END LICENSE BLOCK ***** */
-
-ace.define('ace/ext/textarea', ['require', 'exports', 'module' , 'ace/lib/event', 'ace/lib/useragent', 'ace/lib/net', 'ace/ace', 'ace/theme/textmate', 'ace/mode/text'], function(require, exports, module) {
-
-
+ace.define("ace/ext/textarea",["require","exports","module","ace/lib/event","ace/lib/useragent","ace/lib/net","ace/ace"], function(require, exports, module){"use strict";
 var event = require("../lib/event");
 var UA = require("../lib/useragent");
 var net = require("../lib/net");
 var ace = require("../ace");
-
-require("../theme/textmate");
-
 module.exports = exports = ace;
-var getCSSProperty = function(element, container, property) {
+var getCSSProperty = function (element, container, property) {
     var ret = element.style[property];
-
     if (!ret) {
         if (window.getComputedStyle) {
             ret = window.getComputedStyle(element, '').getPropertyValue(property);
-        } else {
+        }
+        else {
             ret = element.currentStyle[property];
         }
     }
-
     if (!ret || ret == 'auto' || ret == 'intrinsic') {
         ret = container.style[property];
     }
     return ret;
 };
-
 function applyStyles(elm, styles) {
     for (var style in styles) {
         elm.style[style] = styles[style];
     }
 }
-
 function setupContainer(element, getValue) {
     if (element.type != 'textarea') {
         throw new Error("Textarea required!");
     }
-
     var parentNode = element.parentNode;
     var container = document.createElement('div');
-    var resizeEvent = function() {
+    var resizeEvent = function () {
         var style = 'position:relative;';
         [
             'margin-top', 'margin-left', 'margin-right', 'margin-bottom'
-        ].forEach(function(item) {
+        ].forEach(function (item) {
             style += item + ':' +
-                        getCSSProperty(element, container, item) + ';';
+                getCSSProperty(element, container, item) + ';';
         });
         var width = getCSSProperty(element, container, 'width') || (element.clientWidth + "px");
-        var height = getCSSProperty(element, container, 'height')  || (element.clientHeight + "px");
+        var height = getCSSProperty(element, container, 'height') || (element.clientHeight + "px");
         style += 'height:' + height + ';width:' + width + ';';
         style += 'display:inline-block;';
         container.setAttribute('style', style);
@@ -89,7 +50,7 @@ function setupContainer(element, getValue) {
     while (parentNode !== document) {
         if (parentNode.tagName.toUpperCase() === 'FORM') {
             var oldSumit = parentNode.onsubmit;
-            parentNode.onsubmit = function(evt) {
+            parentNode.onsubmit = function (evt) {
                 element.value = getValue();
                 if (oldSumit) {
                     oldSumit.call(this, evt);
@@ -101,10 +62,10 @@ function setupContainer(element, getValue) {
     }
     return container;
 }
-
-exports.transformTextarea = function(element, loader) {
+exports.transformTextarea = function (element, options) {
+    var isFocused = element.autofocus || document.activeElement == element;
     var session;
-    var container = setupContainer(element, function() {
+    var container = setupContainer(element, function () {
         return session.getValue();
     });
     element.style.display = 'none';
@@ -119,21 +80,16 @@ exports.transformTextarea = function(element, loader) {
         position: "absolute"
     });
     container.appendChild(editorDiv);
-
     var settingOpener = document.createElement("div");
     applyStyles(settingOpener, {
         position: "absolute",
         right: "0px",
         bottom: "0px",
-        background: "red",
         cursor: "nw-resize",
-        borderStyle: "solid",
-        borderWidth: "9px 8px 10px 9px",
-        width: "2px",
-        borderColor: "lightblue gray gray lightblue",
+        border: "solid 9px",
+        borderColor: "lightblue gray gray #ceade6",
         zIndex: 101
     });
-
     var settingDiv = document.createElement("div");
     var settingDivStyles = {
         top: "0px",
@@ -151,71 +107,64 @@ exports.transformTextarea = function(element, loader) {
     };
     if (!UA.isOldIE) {
         settingDivStyles.backgroundColor = "rgba(0, 0, 0, 0.6)";
-    } else {
+    }
+    else {
         settingDivStyles.backgroundColor = "#333";
     }
-
     applyStyles(settingDiv, settingDivStyles);
     container.appendChild(settingDiv);
-    var options = {};
-
+    options = options || exports.defaultOptions;
     var editor = ace.edit(editorDiv);
     session = editor.getSession();
-
     session.setValue(element.value || element.innerHTML);
-    editor.focus();
+    if (isFocused)
+        editor.focus();
     container.appendChild(settingOpener);
-    setupApi(editor, editorDiv, settingDiv, ace, options, loader);
-    setupSettingPanel(settingDiv, settingOpener, editor, options);
-
+    setupApi(editor, editorDiv, settingDiv, ace, options);
+    setupSettingPanel(settingDiv, settingOpener, editor);
     var state = "";
-    event.addListener(settingOpener, "mousemove", function(e) {
+    event.addListener(settingOpener, "mousemove", function (e) {
         var rect = this.getBoundingClientRect();
         var x = e.clientX - rect.left, y = e.clientY - rect.top;
-        if (x + y < (rect.width + rect.height)/2) {
+        if (x + y < (rect.width + rect.height) / 2) {
             this.style.cursor = "pointer";
             state = "toggle";
-        } else {
+        }
+        else {
             state = "resize";
             this.style.cursor = "nw-resize";
         }
     });
-
-    event.addListener(settingOpener, "mousedown", function(e) {
+    event.addListener(settingOpener, "mousedown", function (e) {
+        e.preventDefault();
         if (state == "toggle") {
             editor.setDisplaySettings();
             return;
         }
         container.style.zIndex = 100000;
         var rect = container.getBoundingClientRect();
-        var startX = rect.width  + rect.left - e.clientX;
-        var startY = rect.height  + rect.top - e.clientY;
-        event.capture(settingOpener, function(e) {
+        var startX = rect.width + rect.left - e.clientX;
+        var startY = rect.height + rect.top - e.clientY;
+        event.capture(settingOpener, function (e) {
             container.style.width = e.clientX - rect.left + startX + "px";
             container.style.height = e.clientY - rect.top + startY + "px";
             editor.resize();
-        }, function() {});
+        }, function () { });
     });
-
     return editor;
 };
-
 function load(url, module, callback) {
-    net.loadScript(url, function() {
+    net.loadScript(url, function () {
         require([module], callback);
     });
 }
-
-function setupApi(editor, editorDiv, settingDiv, ace, options, loader) {
+function setupApi(editor, editorDiv, settingDiv, ace, options) {
     var session = editor.getSession();
     var renderer = editor.renderer;
-    loader = loader || load;
-
     function toBool(value) {
         return value === "true" || value == true;
     }
-
-    editor.setDisplaySettings = function(display) {
+    editor.setDisplaySettings = function (display) {
         if (display == null)
             display = settingDiv.style.display == "none";
         if (display) {
@@ -225,41 +174,21 @@ function setupApi(editor, editorDiv, settingDiv, ace, options, loader) {
                 editor.removeListener("focus", onFocus);
                 settingDiv.style.display = "none";
             });
-        } else {
+        }
+        else {
             editor.focus();
         }
     };
-
     editor.$setOption = editor.setOption;
-    editor.setOption = function(key, value) {
-        if (options[key] == value) return;
-
+    editor.$getOption = editor.getOption;
+    editor.setOption = function (key, value) {
         switch (key) {
             case "mode":
-                if (value != "text") {
-                    loader("mode-" + value + ".js", "ace/mode/" + value, function() {
-                        var aceMode = require("../mode/" + value).Mode;
-                        session.setMode(new aceMode());
-                    });
-                } else {
-                    session.setMode(new (require("../mode/text").Mode));
-                }
-            break;
-
+                editor.$setOption("mode", "ace/mode/" + value);
+                break;
             case "theme":
-                if (value != "textmate") {
-                    loader("theme-" + value + ".js", "ace/theme/" + value, function() {
-                        editor.setTheme("ace/theme/" + value);
-                    });
-                } else {
-                    editor.setTheme("ace/theme/textmate");
-                }
-            break;
-
-            case "fontSize":
-                editorDiv.style.fontSize = value;
-            break;
-
+                editor.$setOption("theme", "ace/theme/" + value);
+                break;
             case "keybindings":
                 switch (value) {
                     case "vim":
@@ -271,114 +200,102 @@ function setupApi(editor, editorDiv, settingDiv, ace, options, loader) {
                     default:
                         editor.setKeyboardHandler(null);
                 }
-            break;
-
-            case "softWrap":
-                switch (value) {
-                    case "off":
-                        session.setUseWrapMode(false);
-                        renderer.setPrintMarginColumn(80);
-                    break;
-                    case "40":
-                        session.setUseWrapMode(true);
-                        session.setWrapLimitRange(40, 40);
-                        renderer.setPrintMarginColumn(40);
-                    break;
-                    case "80":
-                        session.setUseWrapMode(true);
-                        session.setWrapLimitRange(80, 80);
-                        renderer.setPrintMarginColumn(80);
-                    break;
-                    case "free":
-                        session.setUseWrapMode(true);
-                        session.setWrapLimitRange(null, null);
-                        renderer.setPrintMarginColumn(80);
-                    break;
-                }
-            break;
-            
+                break;
+            case "wrap":
+            case "fontSize":
+                editor.$setOption(key, value);
+                break;
             default:
                 editor.$setOption(key, toBool(value));
         }
-
-        options[key] = value;
     };
-
-    editor.getOption = function(key) {
-        return options[key];
+    editor.getOption = function (key) {
+        switch (key) {
+            case "mode":
+                return editor.$getOption("mode").substr("ace/mode/".length);
+                break;
+            case "theme":
+                return editor.$getOption("theme").substr("ace/theme/".length);
+                break;
+            case "keybindings":
+                var value = editor.getKeyboardHandler();
+                switch (value && value.$id) {
+                    case "ace/keyboard/vim":
+                        return "vim";
+                    case "ace/keyboard/emacs":
+                        return "emacs";
+                    default:
+                        return "ace";
+                }
+                break;
+            default:
+                return editor.$getOption(key);
+        }
     };
-
-    editor.getOptions = function() {
-        return options;
-    };
-
-    editor.setOptions(exports.options);
-
+    editor.setOptions(options);
     return editor;
 }
-
-function setupSettingPanel(settingDiv, settingOpener, editor, options) {
+function setupSettingPanel(settingDiv, settingOpener, editor) {
     var BOOL = null;
-
     var desc = {
-        mode:            "Mode:",
-        gutter:          "Display Gutter:",
-        theme:           "Theme:",
-        fontSize:        "Font Size:",
-        softWrap:        "Soft Wrap:",
-        keybindings:     "Keyboard",
+        mode: "Mode:",
+        wrap: "Soft Wrap:",
+        theme: "Theme:",
+        fontSize: "Font Size:",
+        showGutter: "Display Gutter:",
+        keybindings: "Keyboard",
         showPrintMargin: "Show Print Margin:",
-        useSoftTabs:     "Use Soft Tabs:",
-        showInvisibles:  "Show Invisibles"
+        useSoftTabs: "Use Soft Tabs:",
+        showInvisibles: "Show Invisibles"
     };
-
     var optionValues = {
         mode: {
-            text:       "Plain",
+            text: "Plain",
             javascript: "JavaScript",
-            xml:        "XML",
-            html:       "HTML",
-            css:        "CSS",
-            scss:       "SCSS",
-            python:     "Python",
-            php:        "PHP",
-            java:       "Java",
-            ruby:       "Ruby",
-            c_cpp:      "C/C++",
-            coffee:     "CoffeeScript",
-            json:       "json",
-            perl:       "Perl",
-            clojure:    "Clojure",
-            ocaml:      "OCaml",
-            csharp:     "C#",
-            haxe:       "haXe",
-            svg:        "SVG",
-            textile:    "Textile",
-            groovy:     "Groovy",
-            liquid:     "Liquid",
-            Scala:      "Scala"
+            xml: "XML",
+            html: "HTML",
+            css: "CSS",
+            scss: "SCSS",
+            python: "Python",
+            php: "PHP",
+            java: "Java",
+            ruby: "Ruby",
+            c_cpp: "C/C++",
+            coffee: "CoffeeScript",
+            json: "json",
+            perl: "Perl",
+            clojure: "Clojure",
+            ocaml: "OCaml",
+            csharp: "C#",
+            haxe: "haXe",
+            svg: "SVG",
+            textile: "Textile",
+            groovy: "Groovy",
+            liquid: "Liquid",
+            Scala: "Scala"
         },
         theme: {
-            clouds:           "Clouds",
-            clouds_midnight:  "Clouds Midnight",
-            cobalt:           "Cobalt",
-            crimson_editor:   "Crimson Editor",
-            dawn:             "Dawn",
-            eclipse:          "Eclipse",
-            idle_fingers:     "Idle Fingers",
-            kr_theme:         "Kr Theme",
-            merbivore:        "Merbivore",
-            merbivore_soft:   "Merbivore Soft",
-            mono_industrial:  "Mono Industrial",
-            monokai:          "Monokai",
-            pastel_on_dark:   "Pastel On Dark",
-            solarized_dark:   "Solarized Dark",
-            solarized_light:  "Solarized Light",
-            textmate:         "Textmate",
-            twilight:         "Twilight",
-            vibrant_ink:      "Vibrant Ink"
+            clouds: "Clouds",
+            clouds_midnight: "Clouds Midnight",
+            cobalt: "Cobalt",
+            crimson_editor: "Crimson Editor",
+            dawn: "Dawn",
+            gob: "Green on Black",
+            eclipse: "Eclipse",
+            idle_fingers: "Idle Fingers",
+            kr_theme: "Kr Theme",
+            merbivore: "Merbivore",
+            merbivore_soft: "Merbivore Soft",
+            mono_industrial: "Mono Industrial",
+            monokai: "Monokai",
+            pastel_on_dark: "Pastel On Dark",
+            solarized_dark: "Solarized Dark",
+            solarized_light: "Solarized Light",
+            textmate: "Textmate",
+            twilight: "Twilight",
+            vibrant_ink: "Vibrant Ink"
         },
-        gutter: BOOL,
+        showGutter: BOOL,
         fontSize: {
             "10px": "10px",
             "11px": "11px",
@@ -386,63 +303,51 @@ function setupSettingPanel(settingDiv, settingOpener, editor, options) {
             "14px": "14px",
             "16px": "16px"
         },
-        softWrap: {
-            off:    "Off",
-            40:     "40",
-            80:     "80",
-            free:   "Free"
+        wrap: {
+            off: "Off",
+            40: "40",
+            80: "80",
+            free: "Free"
         },
         keybindings: {
             ace: "ace",
             vim: "vim",
             emacs: "emacs"
         },
-        showPrintMargin:    BOOL,
-        useSoftTabs:        BOOL,
-        showInvisibles:     BOOL
+        showPrintMargin: BOOL,
+        useSoftTabs: BOOL,
+        showInvisibles: BOOL
     };
-
     var table = [];
     table.push("<table><tr><th>Setting</th><th>Value</th></tr>");
-
     function renderOption(builder, option, obj, cValue) {
         if (!obj) {
-            builder.push(
-                "<input type='checkbox' title='", option, "' ",
-                    cValue == "true" ? "checked='true'" : "",
-               "'></input>"
-            );
+            builder.push("<input type='checkbox' title='", option, "' ", cValue + "" == "true" ? "checked='true'" : "", "'></input>");
             return;
         }
         builder.push("<select title='" + option + "'>");
         for (var value in obj) {
             builder.push("<option value='" + value + "' ");
-
             if (cValue == value) {
                 builder.push(" selected ");
             }
-
-            builder.push(">",
-                obj[value],
-                "</option>");
+            builder.push(">", obj[value], "</option>");
         }
         builder.push("</select>");
     }
-
-    for (var option in options) {
+    for (var option in exports.defaultOptions) {
         table.push("<tr><td>", desc[option], "</td>");
         table.push("<td>");
-        renderOption(table, option, optionValues[option], options[option]);
+        renderOption(table, option, optionValues[option], editor.getOption(option));
         table.push("</td></tr>");
     }
     table.push("</table>");
     settingDiv.innerHTML = table.join("");
-
-    var onChange = function(e) {
+    var onChange = function (e) {
         var select = e.currentTarget;
         editor.setOption(select.title, select.value);
     };
-    var onClick = function(e) {
+    var onClick = function (e) {
         var cb = e.currentTarget;
         editor.setOption(cb.title, cb.checked);
     };
@@ -452,27 +357,32 @@ function setupSettingPanel(settingDiv, settingOpener, editor, options) {
     var cbs = settingDiv.getElementsByTagName("input");
     for (var i = 0; i < cbs.length; i++)
         cbs[i].onclick = onClick;
-
-
     var button = document.createElement("input");
     button.type = "button";
     button.value = "Hide";
-    event.addListener(button, "click", function() {
+    event.addListener(button, "click", function () {
         editor.setDisplaySettings(false);
     });
     settingDiv.appendChild(button);
     settingDiv.hideButton = button;
 }
-exports.options = {
-    mode:               "text",
-    theme:              "textmate",
-    gutter:             "false",
-    fontSize:           "12px",
-    softWrap:           "off",
-    keybindings:        "ace",
-    showPrintMargin:    "false",
-    useSoftTabs:        "true",
-    showInvisibles:     "false"
+exports.defaultOptions = {
+    mode: "javascript",
+    theme: "textmate",
+    wrap: "off",
+    fontSize: "12px",
+    showGutter: "false",
+    keybindings: "ace",
+    showPrintMargin: "false",
+    useSoftTabs: "true",
+    showInvisibles: "false"
 };
 
-});
+});                (function() {
+                    ace.require(["ace/ext/textarea"], function(m) {
+                        if (typeof module == "object" && typeof exports == "object" && module) {
+                            module.exports = m;
+                        }
+                    });
+                })();
+            
