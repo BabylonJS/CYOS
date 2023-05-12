@@ -1,13 +1,7 @@
-Evolution of Babylon.js - Create Your Own Shader (CYOS) for all 3D Web APIs
-============================================================================
+Babylon.js - Create Your Own Shader (CYOS)
+==========================================
 
-Original live version: http://www.babylonjs.com/cyos/
-
-I have modified CYOS code to allow for dynamic selection of WebGL 1.0, 2.0 and WebGPU.
-
-I have updated the code for modern JavaScript with modules, updated 3rd party dependencies, removed dead code.
-
-*NOTE:* The save function has been disabled as it requires being hosted on the real CYOS server.
+Live version: http://www.babylonjs.com/cyos/
 
 Do you want to [learn about shaders and CYOS](https://www.eternalcoding.com/?p=113) ?
 
@@ -88,9 +82,3 @@ While redistributing the Work or Derivative Works thereof, You may choose to off
 ## External dependencies
 - hand.js: http://handjs.codeplex.com
 - ace editor: https://ace.c9.io/#nav=about 
-
-
-
-
-
-
