@@ -32,36 +32,23 @@ function stringifyShader(name, data, webGPUSupported) {
     return text;
 }
 
-function addContentToZip(zip, name, url, replace, buffer, then) {
-    const xhr = new XMLHttpRequest();
+async function addContentToZip(zip, name, url, replace, buffer, then) {
+    try {
+        const response = await fetch(url);
 
-    xhr.open('GET', url, true);
-
-    if (buffer) {
-        xhr.responseType = "arraybuffer";
-    }
-
-    xhr.onreadystatechange = () => {
-        if (xhr.readyState == 4) {
-            if (xhr.status == 200) {
-                let text;
-                if (!buffer) {
-                    if (replace) {
-                        text = xhr.responseText.replace("####INJECT####", replace);
-                    } else {
-                        text = xhr.responseText;
-                    }
-                }
-
-                zip.file(name, buffer ? xhr.response : text);
-
-                then();
-            } else { // Failed
+        let text;
+        if (!buffer) {
+            text = await response.text();
+            if (replace) {
+                text = text.replace("####INJECT####", replace);
             }
         }
-    };
 
-    xhr.send(null);
+        zip.file(name, buffer ? await response.arrayBuffer() : text);
+    } catch (err) {
+        // failed
+        console.error(err);
+    }
 }
 
 export function saveFunction(vertexShaderSrc, pixelShaderSrc) {
@@ -120,15 +107,15 @@ export function getZip(vertexShaderSrc, pixelShaderSrc, webGPUSupported) {
     zipCode += "\r\n" + stringifyShader("customFragmentShader", pixelShaderSrc, webGPUSupported) + "\r\n";
     zipCode += "                selectMesh(" + document.getElementById("meshes").selectedIndex + ");\r\n"
 
-    addContentToZip(zip, "index.html", "zipContent/index.html", zipCode, false, function () {
-        addContentToZip(zip, "ref.jpg", "ref.jpg", null, true, function () {
-            addContentToZip(zip, "heightMap.png", "heightMap.png", null, true, function () {
-                addContentToZip(zip, "amiga.jpg", "amiga.jpg", null, true, function () {
-                    var blob = zip.generate({ type: "blob" });
-                    saveAs(blob, "sample.zip");
-                    document.getElementById("errorLog").innerHTML = "<span>" + new Date().toLocaleTimeString() + ": Archive created successfully</span><BR>" + document.getElementById("errorLog").innerHTML;
-                });
-            });
-        });
+    let requests = [];
+    requests.push(addContentToZip(zip, "index.html", "zipContent/index.html", zipCode, false));
+    requests.push(addContentToZip(zip, "ref.jpg", "ref.jpg", null, true));
+    requests.push(addContentToZip(zip, "heightMap.png", "heightMap.png", null, true));
+    requests.push(addContentToZip(zip, "amiga.jpg", "amiga.jpg", null, true));
+
+    Promise.all(requests).then(() => {
+        var blob = zip.generate({ type: "blob" });
+        saveAs(blob, "sample.zip");
+        document.getElementById("errorLog").innerHTML = "<span>" + new Date().toLocaleTimeString() + ": Archive created successfully</span><BR>" + document.getElementById("errorLog").innerHTML;
     });
 }
