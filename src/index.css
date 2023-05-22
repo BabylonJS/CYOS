@@ -544,6 +544,11 @@ select:focus::-ms-value {
   left: 290px;
   top: 15px;
 }
+#rederingDropdown {
+  position: absolute;
+  left: 550px;
+  top: 15px;
+}
 .header {
   display: table-cell;
   width: 98%;
@@ -694,4 +699,7 @@ select:focus::-ms-value {
 }
 .error {
   color: red;
+}
+.disabledButton {
+    pointer-events: none
 }

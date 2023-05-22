@@ -1,102 +1,8 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Distributed under the BSD license:
- *
- * Copyright (c) 2010, Ajax.org B.V.
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Ajax.org B.V. nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL AJAX.ORG B.V. BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- * ***** END LICENSE BLOCK ***** */
-
-ace.define('ace/mode/clojure', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/text', 'ace/mode/clojure_highlight_rules', 'ace/mode/matching_parens_outdent', 'ace/range'], function(require, exports, module) {
-
-
-var oop = require("../lib/oop");
-var TextMode = require("./text").Mode;
-var ClojureHighlightRules = require("./clojure_highlight_rules").ClojureHighlightRules;
-var MatchingParensOutdent = require("./matching_parens_outdent").MatchingParensOutdent;
-var Range = require("../range").Range;
-
-var Mode = function() {
-    this.HighlightRules = ClojureHighlightRules;
-    this.$outdent = new MatchingParensOutdent();
-};
-oop.inherits(Mode, TextMode);
-
-(function() {
-
-    this.lineCommentStart = ";";
-
-    this.getNextLineIndent = function(state, line, tab) {
-        var indent = this.$getIndent(line);
-
-        var tokenizedLine = this.getTokenizer().getLineTokens(line, state);
-        var tokens = tokenizedLine.tokens;
-
-        if (tokens.length && tokens[tokens.length-1].type == "comment") {
-            return indent;
-        }
-        
-        if (state == "start") {
-            var match = line.match(/[\(\[]/);
-            if (match) {
-                indent += "  ";
-            }
-            match = line.match(/[\)]/);
-            if (match) {
-              indent = "";
-            }
-        }
-
-        return indent;
-    };
-
-    this.checkOutdent = function(state, line, input) {
-        return this.$outdent.checkOutdent(line, input);
-    };
-
-    this.autoOutdent = function(state, doc, row) {
-        this.$outdent.autoOutdent(doc, row);
-    };
-
-    this.$id = "ace/mode/clojure";
-}).call(Mode.prototype);
-
-exports.Mode = Mode;
-});
-
-ace.define('ace/mode/clojure_highlight_rules', ['require', 'exports', 'module' , 'ace/lib/oop', 'ace/mode/text_highlight_rules'], function(require, exports, module) {
-
-
+ace.define("ace/mode/clojure_highlight_rules",["require","exports","module","ace/lib/oop","ace/mode/text_highlight_rules"], function(require, exports, module){"use strict";
 var oop = require("../lib/oop");
 var TextHighlightRules = require("./text_highlight_rules").TextHighlightRules;
-
-
-
-var ClojureHighlightRules = function() {
-
-    var builtinFunctions = (
-        '* *1 *2 *3 *agent* *allow-unresolved-vars* *assert* *clojure-version* ' +
+var ClojureHighlightRules = function () {
+    var builtinFunctions = ('* *1 *2 *3 *agent* *allow-unresolved-vars* *assert* *clojure-version* ' +
         '*command-line-args* *compile-files* *compile-path* *e *err* *file* ' +
         '*flush-on-newline* *in* *macro-meta* *math-context* *ns* *out* ' +
         '*print-dup* *print-length* *print-level* *print-meta* *print-readably* ' +
@@ -163,137 +69,217 @@ var ClojureHighlightRules = function() {
         'var? vary-meta vec vector vector? when when-first when-let when-not ' +
         'while with-bindings with-bindings* with-in-str with-loading-context ' +
         'with-local-vars with-meta with-open with-out-str with-precision xml-seq ' +
-        'zero? zipmap'
-    );
-
+        'zero? zipmap');
     var keywords = ('throw try var ' +
-        'def do fn if let loop monitor-enter monitor-exit new quote recur set!'
-    );
-
+        'def do fn if let loop monitor-enter monitor-exit new quote recur set!');
     var buildinConstants = ("true false nil");
-
     var keywordMapper = this.createKeywordMapper({
         "keyword": keywords,
         "constant.language": buildinConstants,
         "support.function": builtinFunctions
     }, "identifier", false, " ");
-
     this.$rules = {
-        "start" : [
+        "start": [
             {
-                token : "comment",
-                regex : ";.*$"
+                token: "comment",
+                regex: ";.*$"
             }, {
-                token : "keyword", //parens
-                regex : "[\\(|\\)]"
+                token: "keyword",
+                regex: "[\\(|\\)]"
             }, {
-                token : "keyword", //lists
-                regex : "[\\'\\(]"
+                token: "keyword",
+                regex: "[\\'\\(]"
             }, {
-                token : "keyword", //vectors
-                regex : "[\\[|\\]]"
+                token: "keyword",
+                regex: "[\\[|\\]]"
             }, {
-                token : "keyword", //sets and maps
-                regex : "[\\{|\\}|\\#\\{|\\#\\}]"
+                token: "keyword",
+                regex: "[\\{|\\}|\\#\\{|\\#\\}]"
             }, {
-                    token : "keyword", // ampersands
-                    regex : '[\\&]'
+                token: "keyword",
+                regex: '[\\&]'
             }, {
-                    token : "keyword", // metadata
-                    regex : '[\\#\\^\\{]'
+                token: "keyword",
+                regex: '[\\#\\^\\{]'
             }, {
-                    token : "keyword", // anonymous fn syntactic sugar
-                    regex : '[\\%]'
+                token: "keyword",
+                regex: '[\\%]'
             }, {
-                    token : "keyword", // deref reader macro
-                    regex : '[@]'
+                token: "keyword",
+                regex: '[@]'
             }, {
-                token : "constant.numeric", // hex
-                regex : "0[xX][0-9a-fA-F]+\\b"
+                token: "constant.numeric",
+                regex: "0[xX][0-9a-fA-F]+\\b"
             }, {
-                token : "constant.numeric", // float
-                regex : "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b"
+                token: "constant.numeric",
+                regex: "[+-]?\\d+(?:(?:\\.\\d*)?(?:[eE][+-]?\\d+)?)?\\b"
             }, {
-                token : "constant.language",
-                regex : '[!|\\$|%|&|\\*|\\-\\-|\\-|\\+\\+|\\+||=|!=|<=|>=|<>|<|>|!|&&]'
+                token: "constant.language",
+                regex: '[!|\\$|%|&|\\*|\\-\\-|\\-|\\+\\+|\\+||=|!=|<=|>=|<>|<|>|!|&&]'
             }, {
-                token : keywordMapper,
-                regex : "[a-zA-Z_$][a-zA-Z0-9_$\\-]*\\b"
+                token: keywordMapper,
+                regex: "[a-zA-Z_$][a-zA-Z0-9_$\\-]*\\b"
             }, {
-                token : "string", // single line
-                regex : '"',
+                token: "string",
+                regex: '"',
                 next: "string"
             }, {
-                token : "constant", // symbol
-                regex : /:[^()\[\]{}'"\^%`,;\s]+/
+                token: "constant",
+                regex: /:[^()\[\]{}'"\^%`,;\s]+/
             }, {
-                token : "string.regexp", //Regular Expressions
-                regex : '/#"(?:\\.|(?:\\\")|[^\""\n])*"/g'
+                token: "string.regexp",
+                regex: '/#"(?:\\.|(?:\\")|[^""\n])*"/g'
             }
-
         ],
-        "string" : [
+        "string": [
             {
-                token : "constant.language.escape",                
-                regex : "\\\\.|\\\\$"
+                token: "constant.language.escape",
+                regex: "\\\\.|\\\\$"
             }, {
-                token : "string",                
-                regex : '[^"\\\\]+'
+                token: "string",
+                regex: '[^"\\\\]+'
             }, {
-                token : "string",
-                regex : '"',
-                next : "start"
+                token: "string",
+                regex: '"',
+                next: "start"
             }
         ]
     };
 };
-
 oop.inherits(ClojureHighlightRules, TextHighlightRules);
-
 exports.ClojureHighlightRules = ClojureHighlightRules;
+
 });
 
-ace.define('ace/mode/matching_parens_outdent', ['require', 'exports', 'module' , 'ace/range'], function(require, exports, module) {
-
-
+ace.define("ace/mode/matching_parens_outdent",["require","exports","module","ace/range"], function(require, exports, module){"use strict";
 var Range = require("../range").Range;
-
-var MatchingParensOutdent = function() {};
-
-(function() {
-
-    this.checkOutdent = function(line, input) {
-        if (! /^\s+$/.test(line))
+var MatchingParensOutdent = function () { };
+(function () {
+    this.checkOutdent = function (line, input) {
+        if (!/^\s+$/.test(line))
             return false;
-
         return /^\s*\)/.test(input);
     };
-
-    this.autoOutdent = function(doc, row) {
+    this.autoOutdent = function (doc, row) {
         var line = doc.getLine(row);
         var match = line.match(/^(\s*\))/);
-
-        if (!match) return 0;
-
+        if (!match)
+            return 0;
         var column = match[1].length;
-        var openBracePos = doc.findMatchingBracket({row: row, column: column});
-
-        if (!openBracePos || openBracePos.row == row) return 0;
-
+        var openBracePos = doc.findMatchingBracket({ row: row, column: column });
+        if (!openBracePos || openBracePos.row == row)
+            return 0;
         var indent = this.$getIndent(doc.getLine(openBracePos.row));
-        doc.replace(new Range(row, 0, row, column-1), indent);
+        doc.replace(new Range(row, 0, row, column - 1), indent);
     };
-
-    this.$getIndent = function(line) {
+    this.$getIndent = function (line) {
         var match = line.match(/^(\s+)/);
         if (match) {
             return match[1];
         }
-
         return "";
     };
-
 }).call(MatchingParensOutdent.prototype);
-
 exports.MatchingParensOutdent = MatchingParensOutdent;
+
 });
+
+ace.define("ace/mode/clojure",["require","exports","module","ace/lib/oop","ace/mode/text","ace/mode/clojure_highlight_rules","ace/mode/matching_parens_outdent"], function(require, exports, module){"use strict";
+var oop = require("../lib/oop");
+var TextMode = require("./text").Mode;
+var ClojureHighlightRules = require("./clojure_highlight_rules").ClojureHighlightRules;
+var MatchingParensOutdent = require("./matching_parens_outdent").MatchingParensOutdent;
+var Mode = function () {
+    this.HighlightRules = ClojureHighlightRules;
+    this.$outdent = new MatchingParensOutdent();
+    this.$behaviour = this.$defaultBehaviour;
+};
+oop.inherits(Mode, TextMode);
+(function () {
+    this.lineCommentStart = ";";
+    this.minorIndentFunctions = ["defn", "defn-", "defmacro", "def", "deftest", "testing"];
+    this.$toIndent = function (str) {
+        return str.split('').map(function (ch) {
+            if (/\s/.exec(ch)) {
+                return ch;
+            }
+            else {
+                return ' ';
+            }
+        }).join('');
+    };
+    this.$calculateIndent = function (line, tab) {
+        var baseIndent = this.$getIndent(line);
+        var delta = 0;
+        var isParen, ch;
+        for (var i = line.length - 1; i >= 0; i--) {
+            ch = line[i];
+            if (ch === '(') {
+                delta--;
+                isParen = true;
+            }
+            else if (ch === '(' || ch === '[' || ch === '{') {
+                delta--;
+                isParen = false;
+            }
+            else if (ch === ')' || ch === ']' || ch === '}') {
+                delta++;
+            }
+            if (delta < 0) {
+                break;
+            }
+        }
+        if (delta < 0 && isParen) {
+            i += 1;
+            var iBefore = i;
+            var fn = '';
+            while (true) {
+                ch = line[i];
+                if (ch === ' ' || ch === '\t') {
+                    if (this.minorIndentFunctions.indexOf(fn) !== -1) {
+                        return this.$toIndent(line.substring(0, iBefore - 1) + tab);
+                    }
+                    else {
+                        return this.$toIndent(line.substring(0, i + 1));
+                    }
+                }
+                else if (ch === undefined) {
+                    return this.$toIndent(line.substring(0, iBefore - 1) + tab);
+                }
+                fn += line[i];
+                i++;
+            }
+        }
+        else if (delta < 0 && !isParen) {
+            return this.$toIndent(line.substring(0, i + 1));
+        }
+        else if (delta > 0) {
+            baseIndent = baseIndent.substring(0, baseIndent.length - tab.length);
+            return baseIndent;
+        }
+        else {
+            return baseIndent;
+        }
+    };
+    this.getNextLineIndent = function (state, line, tab) {
+        return this.$calculateIndent(line, tab);
+    };
+    this.checkOutdent = function (state, line, input) {
+        return this.$outdent.checkOutdent(line, input);
+    };
+    this.autoOutdent = function (state, doc, row) {
+        this.$outdent.autoOutdent(doc, row);
+    };
+    this.$id = "ace/mode/clojure";
+    this.snippetFileId = "ace/snippets/clojure";
+}).call(Mode.prototype);
+exports.Mode = Mode;
+
+});                (function() {
+                    ace.require(["ace/mode/clojure"], function(m) {
+                        if (typeof module == "object" && typeof exports == "object" && module) {
+                            module.exports = m;
+                        }
+                    });
+                })();
+            

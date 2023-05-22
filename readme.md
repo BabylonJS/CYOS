@@ -5,7 +5,7 @@ Live version: http://www.babylonjs.com/cyos/
 
 Do you want to [learn about shaders and CYOS](https://www.eternalcoding.com/?p=113) ?
 
-**Any questions?** Here is our official [forum](http://www.html5gamedevs.com/forum/16-babylonjs/) on www.html5gamedevs.com.
+**Any questions?** Here is the official [CYOS forum](https://forum.babylonjs.com/) on www.babylonjs.com.
 
 ## Apache License 2.0 (Apache)
 
@@ -82,9 +82,3 @@ While redistributing the Work or Derivative Works thereof, You may choose to off
 ## External dependencies
 - hand.js: http://handjs.codeplex.com
 - ace editor: https://ace.c9.io/#nav=about 
-
-
-
-
-
-
