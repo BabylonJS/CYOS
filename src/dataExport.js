@@ -1,6 +1,6 @@
 ﻿import './fileSaver.js';
 
-const snippetUrl = "https://snippet.babylonjs.com";
+export const snippetUrl = "https://snippet.babylonjs.com";
 
 let currentSnippetToken;
 

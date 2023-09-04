@@ -2,7 +2,7 @@
 
 import { loadShader } from './shaders.js';
 import { checkHash } from './hashUtils.js';
-import { saveFunction, getZip } from './dataExport.js';
+import { saveFunction, getZip, snippetUrl } from './dataExport.js';
 
 
 let engine;
@@ -234,9 +234,9 @@ async function createEngine(canvas) {
 (function () {
     document.addEventListener("DOMContentLoaded", start, false);
   
-    function start() {
-        effectiveStart();
-        checkHash();
+    async function start() {
+        await effectiveStart();
+        checkHash(snippetUrl, vertexEditor, pixelEditor, selectMesh, compile);
     }
 
     async function effectiveStart()  {
