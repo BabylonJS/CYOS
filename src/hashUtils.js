@@ -11,7 +11,7 @@ function cleanHash() {
     location.hash = splits.join("#");
 }
 
-export function checkHash() {
+export function checkHash(snippetUrl, vertexEditor, pixelEditor, selectMesh, compile) {
     if (location.hash) {
         if (previousHash != location.hash) {
             cleanHash();
@@ -53,5 +53,5 @@ export function checkHash() {
         }
     }
 
-    setTimeout(checkHash, 200);
+    setTimeout(checkHash.bind(checkHash, snippetUrl, vertexEditor, pixelEditor, selectMesh), 200);
 }
