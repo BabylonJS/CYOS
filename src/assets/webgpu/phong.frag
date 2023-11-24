@@ -33,5 +33,5 @@ fn main(input : FragmentInputs) -> FragmentOutputs {
     let specComp = max(0., dot(vNormalW, angleW));
     let specComp2 = pow(specComp, max(1., 64.)) * 2.;
 
-    fragmentOutputs.color = vec4(color * ndl + vec3(specComp), 1.);
+    fragmentOutputs.color = vec4(color * ndl + vec3(specComp2), 1.);
 }
