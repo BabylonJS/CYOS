@@ -4,30 +4,12 @@ export const snippetUrl = "https://snippet.babylonjs.com";
 
 let currentSnippetToken;
 
-function stringifyShader(name, data, webGPUSupported) {
+function stringifyShader(name, data, renderingEngine) {
     let text = "";
 
-    if (webGPUSupported) {
-        text = "                BABYLON.Effect.ShadersStoreWGSL[\"" + name + "\"]=";
-    } else {
-        text = "                BABYLON.Effect.ShadersStore[\"" + name + "\"]=";
-    }
-
-    let splits = data.split("\n");
-    for (let index = 0; index < splits.length; index++) {
-
-        if (splits[index] !== "") {
-            text += "                \"" + splits[index] + "\\r\\n\"";
-
-            if (index != splits.length - 1) {
-                text += "+\r\n";
-            } else {
-                text += ";\r\n";
-            }
-        } else {
-            text += "\r\n";
-        }
-    }
+    text = `                BABYLON.ShaderStore.${renderingEngine === "webgpu" ? "ShadersStoreWGSL" : "ShadersStore"}["${name}"]=\``;
+    text += data;
+    text += "`\n";
 
     return text;
 }
@@ -89,7 +71,7 @@ export function saveFunction(vertexShaderSrc, pixelShaderSrc) {
     xmlHttp.send(JSON.stringify(dataToSend));
 }
 
-export function getZip(vertexShaderSrc, pixelShaderSrc, webGPUSupported) {
+export function getZip(vertexShaderSrc, pixelShaderSrc, renderingEngine) {
     /*if (engine.scenes.length == 0) {
         return;
     }*/
@@ -102,10 +84,12 @@ export function getZip(vertexShaderSrc, pixelShaderSrc, webGPUSupported) {
 
     document.getElementById("errorLog").innerHTML = "<span>" + new Date().toLocaleTimeString() + ": Creating archive...Please wait</span><BR>" + document.getElementById("errorLog").innerHTML;
 
-    var zipCode = stringifyShader("customVertexShader", vertexShaderSrc, webGPUSupported);
+    var zipCode = "var renderingEngine = \"" + renderingEngine + "\";\n";
 
-    zipCode += "\r\n" + stringifyShader("customFragmentShader", pixelShaderSrc, webGPUSupported) + "\r\n";
-    zipCode += "                selectMesh(" + document.getElementById("meshes").selectedIndex + ");\r\n"
+    zipCode += stringifyShader("customVertexShader", vertexShaderSrc, renderingEngine);
+
+    zipCode += "\n" + stringifyShader("customFragmentShader", pixelShaderSrc, renderingEngine) + "\n";
+    zipCode += "                var selectedMesh =" + document.getElementById("meshes").selectedIndex + ";\n"
 
     let requests = [];
     requests.push(addContentToZip(zip, "index.html", "zipContent/index.html", zipCode, false));
