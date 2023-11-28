@@ -105,7 +105,7 @@ function compile() {
     shaderMaterial.setVector3("cameraPosition", BABYLON.Vector3.Zero());
     shaderMaterial.backFaceCulling = false;
 
-    if (webGPUSupported) {
+    if (webGPUSupported && renderingId === "webgpu") {
         // Also needed for WebGPU version
         shaderMaterial.setTexture("diffuse", mainTexture);
 
@@ -180,7 +180,7 @@ function selectMesh() {
     }
 };
 
-function selectRenderAPI() {
+async function selectRenderAPI() {
     const select = document.getElementById("renderAPI");
 
     switch (select.selectedIndex) {
@@ -201,7 +201,8 @@ function selectRenderAPI() {
     }
 
     // re-trigger template selection for the new API
-    selectTemplate()
+    await initScene();
+    await selectTemplate();
 };
 
 
@@ -221,13 +222,62 @@ function initializeRenderingOptions() {
 
 async function createEngine(canvas) {
     webGPUSupported = await BABYLON.WebGPUEngine.IsSupportedAsync;
-    if (webGPUSupported) {
+    if (webGPUSupported && renderingId === "webgpu") {
         const engine = new BABYLON.WebGPUEngine(canvas);
         await engine.initAsync();
         //engine.dbgShowShaderCode = true
         return engine;
     }
-    return new BABYLON.Engine(canvas, true);
+    return new BABYLON.Engine(canvas, true, {
+        disableWebGL2Support: renderingId === "webgl-1",
+    });
+}
+
+function engineResize() {
+    engine.resize();
+}
+
+async function initScene() {
+    if(engine) {
+        engine.dispose();
+        window.removeEventListener("resize", engineResize);
+        // check if canvas exists
+        const canvas = document.getElementById("renderCanvas");
+        if (canvas) {
+            document.getElementById("renderCanvasContainer").removeChild(canvas);
+        }
+    }
+    const canvas = document.createElement("canvas");
+    canvas.id = "renderCanvas";
+    document.getElementById("renderCanvasContainer").appendChild(canvas);
+
+    engine = await createEngine(canvas);
+    scene = new BABYLON.Scene(engine);
+    var camera = new BABYLON.ArcRotateCamera("Camera", 0, Math.PI / 2, 12, BABYLON.Vector3.Zero(), scene);
+
+    camera.attachControl(false);
+    camera.lowerRadiusLimit = 1;
+    camera.minZ = 1.0;
+
+    selectMesh();
+
+    if (!location.hash) {
+        await selectTemplate(true);
+    }
+
+    var time = 0;
+    engine.runRenderLoop(() => {
+        if (shaderMaterial) {
+            shaderMaterial.setFloat("time", time);
+            time += 0.02;
+
+            shaderMaterial.setVector3("cameraPosition", camera.position);
+        }
+
+        scene.render();
+    });
+
+    window.addEventListener("resize", engineResize);
 }
 
 
@@ -265,46 +315,16 @@ async function createEngine(canvas) {
 
         // Get button
         document.getElementById("getButton").addEventListener("click", function () {
-            getZip(vertexEditor.getValue(), pixelEditor.getValue(), webGPUSupported);
+            const select = document.getElementById("renderAPI");
+            getZip(vertexEditor.getValue(), pixelEditor.getValue(), renderingId);
         });
 
         // Babylon.js
         if (BABYLON.Engine.isSupported()) {
-            var canvas = document.getElementById("renderCanvas");
-
-            engine = await createEngine(canvas);
-            scene = new BABYLON.Scene(engine);
-            var camera = new BABYLON.ArcRotateCamera("Camera", 0, Math.PI / 2, 12, BABYLON.Vector3.Zero(), scene);
-
-            camera.attachControl(canvas, false);
-            camera.lowerRadiusLimit = 1;
-            camera.minZ = 1.0;
-
-            // now with the engine configure add the set of available rendering modes.
-            initializeRenderingOptions();
-
-            selectMesh();
-
-            if (!location.hash) {
-                selectTemplate(true);
-            }
-
-            var time = 0;
-            engine.runRenderLoop(() => {
-                if (shaderMaterial) {
-                    shaderMaterial.setFloat("time", time);
-                    time += 0.02;
-
-                    shaderMaterial.setVector3("cameraPosition", camera.position);
-                }
-
-                scene.render();
-            });
-
-            window.addEventListener("resize", () => {
-                engine.resize();
-            });
+            await initScene();
         }
+        // now with the engine configure add the set of available rendering modes.
+        initializeRenderingOptions();
     };
 
     
